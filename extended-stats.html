@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Extended stats — PokerNow</title>
+<style>
+  :root{
+    --table-deep:#0b211c; --felt:#15463a; --rail:#07140f;
+    --bone:#ece6d6; --ink:#cdd6d1; --dim:#5c706a; --line:#22433a; --panel:#0c241d;
+    --gold:#d9a441; --blue:#5b9bd1; --crimson:#c75a4a; --green:#6fbf8e;
+    --ui:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--ui);color:var(--ink);
+    background:radial-gradient(120% 80% at 50% -10%,#123a30,var(--table-deep) 55%,#061310);
+    min-height:100vh}
+  a{color:var(--gold)}
+  header{display:flex;align-items:baseline;gap:20px;flex-wrap:wrap;
+    padding:16px 28px;border-bottom:1px solid var(--line);
+    background:rgba(6,18,14,.6);position:sticky;top:0;z-index:5;backdrop-filter:blur(6px)}
+  .brand{font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px;color:var(--bone)}
+  .brand .dot{color:var(--gold)}
+  .meta{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--dim)}
+  .meta b{color:var(--ink)} .meta .k{margin-right:5px}
+  .spacer{flex:1}
+  .nav a{font-size:12px;text-decoration:none;color:var(--dim);margin-left:16px}
+  .nav a:hover{color:var(--bone)}
+  .wrap{max-width:1180px;margin:0 auto;padding:30px 28px 80px}
+  .note{font-size:12.5px;color:var(--dim);border:1px solid var(--line);
+    border-radius:10px;padding:11px 15px;margin-bottom:26px;line-height:1.5;background:rgba(12,36,29,.4)}
+  .note b{color:var(--ink)}
+  h2.section{font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--dim);
+    margin:34px 0 14px;display:flex;align-items:center;gap:12px}
+  h2.section::after{content:"";flex:1;height:1px;background:var(--line)}
+  h2.section .hint{font-size:10px;letter-spacing:.04em;text-transform:none;color:var(--dim)}
+  table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:13px}
+  th,td{text-align:right;padding:9px 11px;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{color:var(--dim);font-weight:600;font-size:10px;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;user-select:none}
+  th.no-sort{cursor:default}
+  th:hover:not(.no-sort){color:var(--bone)}
+  th.sorted::after{content:" \25BE";color:var(--gold)}
+  th.sorted.asc::after{content:" \25B4";color:var(--gold)}
+  td:first-child,th:first-child{text-align:left;color:var(--bone)}
+  tbody tr:hover{background:rgba(217,164,65,.05)}
+  tbody tr.hero-row{background:rgba(217,164,65,.08)}
+  tbody tr.hero-row td:first-child{color:var(--gold)}
+  .pos-net{color:var(--green)} .neg-net{color:var(--crimson)}
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:rgba(8,24,19,.4)}
+  .tblwrap table{min-width:640px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .chip{font-family:var(--ui);font-size:11px;color:var(--dim);background:#0e271f;
+    border:1px solid var(--line);padding:5px 11px;border-radius:7px;cursor:pointer}
+  .chip:hover{color:var(--bone);border-color:var(--gold)}
+  .chip.on{color:var(--bone);border-color:var(--gold);background:rgba(217,164,65,.12)}
+  /* fold matrix */
+  .mtxwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:rgba(8,24,19,.4);padding:6px}
+  table.mtx{border-collapse:separate;border-spacing:2px;min-width:0;width:auto;margin:0 auto}
+  table.mtx th,table.mtx td{border-bottom:none;padding:0}
+  table.mtx th{font-size:9.5px;padding:4px 6px;cursor:default;text-align:center}
+  table.mtx th.rowh{text-align:right;padding-right:10px;font-size:11px;letter-spacing:0;text-transform:none;color:var(--ink)}
+  table.mtx th.rowh.hero{color:var(--gold)}
+  table.mtx th.colh{writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;
+    height:76px;vertical-align:bottom;letter-spacing:0;text-transform:none;font-size:10.5px;color:var(--ink)}
+  table.mtx th.colh.hero{color:var(--gold)}
+  table.mtx th.colh.all{color:var(--bone);font-weight:700}
+  table.mtx td.cell{width:46px;height:34px;text-align:center;font-family:var(--mono);
+    font-size:11.5px;border-radius:4px;background:rgba(236,230,214,.03);color:var(--dim)}
+  table.mtx td.cell.hasn{cursor:default}
+  table.mtx td.cell small{display:block;font-size:8.5px;opacity:.75;line-height:1;margin-top:1px}
+  table.mtx td.cell.allcol{outline:1px solid var(--line)}
+  .mtxlegend{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;
+    color:var(--dim);margin-top:10px;flex-wrap:wrap}
+  .mtxlegend .ramp{display:inline-flex}
+  .mtxlegend .ramp i{width:26px;height:12px;display:inline-block}
+  .tip{position:fixed;pointer-events:none;z-index:50;background:#0e271f;border:1px solid var(--gold);
+    border-radius:8px;padding:8px 11px;font-family:var(--mono);font-size:11.5px;color:var(--ink);
+    display:none;max-width:280px;line-height:1.5;box-shadow:0 6px 18px rgba(0,0,0,.5)}
+  .tip b{color:var(--bone)}
+  .verdict{font-size:11px;font-family:var(--ui);color:var(--dim);white-space:normal;max-width:270px;text-align:left}
+  .verdict b{color:var(--ink)}
+  td.vcell{white-space:normal;text-align:left;min-width:230px}
+  .tier{font-size:8.5px;letter-spacing:.06em;text-transform:uppercase;border-radius:4px;padding:1px 5px;margin-left:5px}
+  .cf-ins{color:#7a6a55;background:rgba(122,106,85,.15)} .cf-dir{color:var(--gold);background:rgba(217,164,65,.12)}
+  .cf-mod{color:var(--blue);background:rgba(91,155,209,.12)} .cf-solid{color:var(--green);background:rgba(111,191,142,.12)}
+  .mixbar{display:inline-flex;height:10px;width:110px;border-radius:3px;overflow:hidden;vertical-align:middle}
+  .mixbar i{height:100%}
+  .mixbar .s{background:#3d6b58} .mixbar .m{background:#6fae8f} .mixbar .b{background:#d9a441}
+  /* bluff anatomy (palette validated: violet/green/blue/crimson on dark) */
+  .anat{display:inline-flex;height:12px;width:150px;vertical-align:middle;gap:2px}
+  .anat i{height:100%;border-radius:2px}
+  .anat .thn{background:#9b7fd4} .anat .val{background:#4c9d6f}
+  .anat .sem{background:#5b9bd1} .anat .air{background:#c75a4a}
+  .anatlegend{display:flex;gap:16px;flex-wrap:wrap;font-family:var(--mono);font-size:11.5px;color:var(--ink);margin-bottom:10px}
+  .anatlegend .sw{width:11px;height:11px;border-radius:2px;display:inline-block;margin-right:6px;vertical-align:-1px}
+  /* hero hand matrix (diverging: green won / crimson lost, neutral = untested) */
+  .hmxwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px;background:rgba(8,24,19,.4);padding:10px}
+  table.hmx{border-collapse:separate;border-spacing:2px;width:auto;margin:0 auto;min-width:0}
+  table.hmx td{width:52px;height:40px;text-align:center;border-bottom:none;padding:0;
+    border-radius:4px;background:rgba(236,230,214,.03);cursor:default}
+  table.hmx td .t{font-family:var(--mono);font-size:11px;color:var(--dim);line-height:1.1;display:block;margin-top:5px}
+  table.hmx td .v{font-family:var(--mono);font-size:10px;color:var(--dim);display:block;line-height:1.2}
+  table.hmx td.dealt .t{color:var(--ink)}
+  .hmxlegend{display:flex;align-items:center;gap:12px;font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:10px;flex-wrap:wrap}
+  .hmxlegend .ramp{display:inline-flex}
+  .hmxlegend .ramp i{width:22px;height:12px;display:inline-block}
+  /* range library */
+  details.player{border:1px solid var(--line);border-radius:12px;background:rgba(8,24,19,.5);
+    margin-bottom:10px;overflow:hidden}
+  details.player summary{cursor:pointer;padding:13px 16px;font-family:var(--mono);font-size:13px;
+    color:var(--bone);display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;list-style:none}
+  details.player summary::-webkit-details-marker{display:none}
+  details.player summary:hover{background:rgba(217,164,65,.05)}
+  details.player summary .n{color:var(--dim);font-size:11px}
+  details.player .body{padding:4px 16px 14px;border-top:1px solid var(--line)}
+  .cat{margin-top:12px}
+  .cat .cath{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin-bottom:4px}
+  .cat .cath b{color:var(--gold);letter-spacing:0;text-transform:none;font-family:var(--mono);font-size:11.5px}
+  .sd{display:grid;grid-template-columns:96px 1fr auto;gap:12px;align-items:baseline;
+    padding:5px 0;border-bottom:1px dashed rgba(34,67,58,.6);font-family:var(--mono);font-size:12px}
+  .sd:last-child{border-bottom:none}
+  .sd .cards{font-size:13.5px;letter-spacing:.03em;color:var(--bone)}
+  .sd .cards .rs{color:#e08373} .sd .cards .bs{color:var(--ink)}
+  .sd .line{color:var(--dim);white-space:normal}
+  .sd .line b{color:var(--ink);font-weight:600}
+  .sd .res{font-size:11.5px}
+  .tok{display:inline-block;font-family:var(--mono);font-size:11.5px;color:var(--ink);
+    background:rgba(236,230,214,.05);border:1px solid var(--line);border-radius:5px;padding:1px 6px;margin:2px 3px 0 0}
+  .empty{color:var(--dim);font-family:var(--mono);font-size:12px;padding:16px}
+  @media (max-width:680px){.sd{grid-template-columns:80px 1fr}.sd .res{grid-column:1/-1}}
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">EXTENDED<span class="dot">.</span></div>
+  <div class="meta" id="hdrMeta"></div>
+  <div class="spacer"></div>
+  <nav class="nav">
+    <a href="stats.html">&harr; Stats</a>
+    <a href="replayer.html">&harr; Replayer</a>
+    <a href="study.html">&harr; Study</a>
+  </nav>
+</header>
+<div class="wrap" id="main">
+  <div class="note"><b>Opponent exploitation report</b> — everything below is derived from actions,
+  bet sizes and showdown reveals only (no hole-card knowledge needed). NLH hands only. Sample tags:
+  <span class="tier cf-ins">insufficient</span> &lt;8 · <span class="tier cf-dir">directional</span> 8–19 ·
+  <span class="tier cf-mod">moderate</span> 20–49 · <span class="tier cf-solid">solid</span> 50+.
+  Matrix cells with fewer than 5 samples show a dot.</div>
+
+  <h2 class="section">Fold matrix <span class="hint">how each row player responds to each column player's aggression — find respect asymmetries</span></h2>
+  <div class="chips" id="mtxChips"></div>
+  <div class="mtxwrap"><div id="mtxBox"></div></div>
+  <div class="mtxlegend">
+    <span>fold&nbsp;%</span>
+    <span class="ramp" id="rampBox"></span>
+    <span>0% &rarr; 100%</span>
+    <span style="margin-left:14px">rows = defender · columns = attacker · <b style="color:var(--bone)">ALL</b> = vs anyone (pooled)</span>
+  </div>
+
+  <h2 class="section">Bet-sizing tells <span class="hint">size &rarr; strength honesty, and who folds to which sizes</span></h2>
+  <div class="note" style="margin-bottom:14px">Buckets by % of pot: <b>small</b> &le;50% · <b>mid</b> 50–100% · <b>big</b> &gt;100% (overbet).
+  <b>Honesty</b> = of that player's postflop bets in hands that reached showdown with them, how often they won —
+  a high number for big bets means their big sizing is value, so fold; a similar number across sizes means sizing carries no tell.
+  <b>Mix</b> shows their default sizing habit.</div>
+  <div class="tblwrap"><table id="tblHonesty">
+    <thead><tr><th>Player</th><th>Postflop bets</th><th class="no-sort">Mix s/m/b</th>
+    <th>Small win%</th><th>Mid win%</th><th>Big win%</th><th class="no-sort">Read</th></tr></thead>
+    <tbody></tbody></table></div>
+  <div style="height:16px"></div>
+  <div class="tblwrap"><table id="tblFoldSize">
+    <thead><tr><th>Player</th><th>Faced bets</th><th>Fold vs small</th><th>Fold vs mid</th><th>Fold vs big</th>
+    <th class="no-sort">Read</th></tr></thead>
+    <tbody></tbody></table></div>
+
+  <div id="bluffSec">
+  <h2 class="section">Bluff anatomy <span class="hint">what their bets actually were, from showdown-revealed hands — computed by bluffs.py</span></h2>
+  <div class="note" style="margin-bottom:12px"><b>Where bluffs come from.</b> Every revealed showdown hand is replayed:
+  each street where the player bet or raised is classified by what they truly held at that moment.
+  River air is traced to its origin — a <b>flush draw that missed</b>, a <b>straight draw that missed</b>, or plain air.
+  Caveat: we only see bets that got <b>called</b> — bluffs that worked are invisible, so these numbers understate
+  bluffing; the <b>bet-fold</b> column (bets given up when raised, needs no showdown) proxies the rest.</div>
+  <div class="anatlegend">
+    <span><span class="sw" style="background:#9b7fd4"></span>thin (weak pair)</span>
+    <span><span class="sw" style="background:#4c9d6f"></span>value (top pair+)</span>
+    <span><span class="sw" style="background:#5b9bd1"></span>semi-bluff (draw)</span>
+    <span><span class="sw" style="background:#c75a4a"></span>air (nothing)</span>
+  </div>
+  <div class="tblwrap"><table id="tblBluff">
+    <thead><tr><th>Player</th><th class="no-sort">Flop</th><th class="no-sort">Turn</th><th class="no-sort">River</th>
+    <th>River air+thin</th><th class="no-sort">River bluff origins</th><th>Bet-fold</th><th class="no-sort">Read</th></tr></thead>
+    <tbody></tbody></table></div>
+  <div id="bluffGlobal" class="note" style="margin-top:10px"></div>
+  </div>
+
+  <h2 class="section">Line tendencies <span class="hint">rare lines mean strength — frequent lines are bluffable. click headers to sort</span></h2>
+  <div class="tblwrap"><table id="tblLines">
+    <thead><tr><th>Player</th><th>Hands</th><th>Check-raise</th><th>Donk bet</th><th>Probe turn</th>
+    <th>Limp-fold</th><th>River-bet win%</th><th>Fold cbet</th><th>Fold turn brl</th><th>Fold river brl</th></tr></thead>
+    <tbody></tbody></table></div>
+  <div class="note" style="margin-top:10px"><b>How to read:</b> a player with a near-zero check-raise or donk frequency has the
+  nuts when they finally do it — just fold. High limp-fold = raise their limps relentlessly.
+  <b>River-bet win%</b> is their showdown win rate in hands where they bet the river — near 100% means their river bets
+  are never bluffs. The three fold columns are pooled vs all attackers (flop c-bet, turn barrel after calling flop,
+  river barrel after calling two streets).</div>
+
+  <h2 class="section">Tilt profiles <span class="hint">each player's next 10 hands after losing a pot &ge; 25bb, vs their baseline</span></h2>
+  <div class="tblwrap"><table id="tblTilt">
+    <thead><tr><th>Player</th><th>Triggers</th><th>Hands after</th><th>VPIP base</th><th>VPIP after</th>
+    <th>&Delta; VPIP</th><th>AF base</th><th>AF after</th><th>Net after (bb/100)</th><th class="no-sort">Read</th></tr></thead>
+    <tbody></tbody></table></div>
+
+  <h2 class="section">Positional leaks <span class="hint">stealing and blind defense, per player</span></h2>
+  <div class="tblwrap"><table id="tblPos">
+    <thead><tr><th>Player</th><th>Hands</th><th>Steal att.</th><th>Fold BB vs steal</th><th>Fold SB vs steal</th>
+    <th>BB VPIP</th><th class="no-sort">Read</th></tr></thead>
+    <tbody></tbody></table></div>
+
+  <div id="hmxSec">
+  <h2 class="section">Your hand matrix <span class="hint">net bb won per starting hand — known-card hands only, computed by hand_matrix.py</span></h2>
+  <div class="hmxwrap"><div id="hmxBox"></div></div>
+  <div class="hmxlegend">
+    <span style="color:var(--crimson)">lost</span>
+    <span class="ramp" id="hmxRamp"></span>
+    <span style="color:var(--green)">won</span>
+    <span id="hmxMeta" style="margin-left:14px"></span>
+    <span>pairs on the diagonal · suited above · offsuit below · hover for detail</span>
+  </div>
+  </div>
+
+  <h2 class="section">Showdown range library <span class="hint">every revealed hand with the line that preceded it — an empirical range book per player</span></h2>
+  <div id="libBox"></div>
+</div>
+<div class="tip" id="tip"></div>
+
+<script src="hub.js"></script>
+<script>
+"use strict";
+/* ---------- identity (names_map.json is the base, same as build.py) ---------- */
+let FILE_MAP={};
+function keyOf(id,name){ return FILE_MAP[id]||FILE_MAP[name]||name; }
+
+/* ---------- generic helpers ---------- */
+const f0=x=>Math.round(x), f1=x=>(Math.round(x*10)/10).toFixed(1);
+const pct=(x,n)=>n?100*x/n:null;
+function confOf(n){
+  if(n<8) return {t:"insufficient",c:"cf-ins"};
+  if(n<20) return {t:"directional",c:"cf-dir"};
+  if(n<50) return {t:"moderate",c:"cf-mod"};
+  return {t:"solid",c:"cf-solid"};
+}
+const tier=n=>{const c=confOf(n);return `<span class="tier ${c.c}">${c.t}</span>`;};
+function byStreet(hand){const s={preflop:[],flop:[],turn:[],river:[]};
+  hand.actions.forEach(a=>{(s[a.street]||(s[a.street]=[])).push(a);});return s;}
+function positions(hand){
+  const ring=hand.players.map(p=>p.seat).sort((a,b)=>a-b),n=ring.length;
+  const sb=(hand.actions.find(a=>a.action==="post_small_blind")||{}).seat;
+  const bb=(hand.actions.find(a=>a.action==="post_big_blind")||{}).seat;
+  const idx=s=>ring.indexOf(s);let btn=hand.dealer_seat;
+  if(!ring.includes(btn)&&sb!=null)btn=ring[(idx(sb)-1+n)%n];
+  const pos={};ring.forEach(seat=>{const fb=(idx(seat)-idx(btn)+n)%n;
+    pos[seat]=fb===0?"BTN":fb===1?"SB":fb===2?"BB":fb===n-1?"CO":"EP/MP";});
+  if(sb!=null)pos[sb]="SB";if(bb!=null)pos[bb]="BB";return pos;
+}
+function endStacks(hand){
+  const stacks={};hand.players.forEach(p=>stacks[p.seat]=p.stack);
+  let commit={},street="preflop";
+  for(const a of hand.actions){
+    if(a.street!==street){commit={};street=a.street;}
+    if(a.action==="post_missing_small_blind"){stacks[a.seat]-=(a.amount||0);continue;}
+    if(["post_small_blind","post_big_blind","post_missed_big_blind","call","bet","raise"].includes(a.action)){
+      const prev=commit[a.seat]||0,lvl=a.amount||0;
+      commit[a.seat]=Math.max(prev,lvl);stacks[a.seat]-=Math.max(0,lvl-prev);
+    }
+  }
+  for(const w of (hand.awards||[]))stacks[w.seat]+=(w.amount||0);
+  for(const u of (hand.uncalled_returns||[]))stacks[u.seat]+=(u.amount||0);
+  return stacks;
+}
+const SUIT={c:"♣",d:"♦",h:"♥",s:"♠"};
+const RANKV={2:2,3:3,4:4,5:5,6:6,7:7,8:8,9:9,T:10,J:11,Q:12,K:13,A:14};
+function cardHTML(c){
+  if(!c)return "?";
+  const r=c.slice(0,-1)==="T"?"10":c.slice(0,-1),s=c.slice(-1);
+  const cls=(s==="h"||s==="d")?"rs":"bs";
+  return `<span class="${cls}">${r}${SUIT[s]}</span>`;
+}
+function handToken(cards){
+  const [a,b]=cards;
+  let r1=a.slice(0,-1),r2=b.slice(0,-1);
+  if(RANKV[r2]>RANKV[r1])[r1,r2]=[r2,r1];
+  if(r1===r2)return r1+r2;
+  return r1+r2+(a.slice(-1)===b.slice(-1)?"s":"o");
+}
+
+/* ---------- the single analysis pass ---------- */
+const STREETS=["flop","turn","river"];
+let MODEL=null;
+
+function newP(name){return {name,hands:0,isHero:false,
+  xr:0,xrOpp:0,donk:0,donkOpp:0,probe:0,probeOpp:0,lf:0,lc:0,lr:0,lfOpp:0,
+  rivBet:0,rivWin:0,
+  honesty:{s:{n:0,w:0},m:{n:0,w:0},b:{n:0,w:0}},
+  mix:{s:0,m:0,b:0},
+  foldSize:{s:{n:0,f:0},m:{n:0,f:0},b:{n:0,f:0}},
+  fcb:{n:0,f:0},dbl:{n:0,f:0},trp:{n:0,f:0},f3b:{n:0,f:0},
+  steal:0,stealOpp:0,fBB:0,fBBOpp:0,fSB:0,fSBOpp:0,bbV:0,bbN:0,
+  shows:[]};}
+
+function bucketOf(ratio){ return ratio<=0.5?"s":(ratio<=1.0?"m":"b"); }
+
+function analyze(hands){
+  const P={};
+  const get=k=>P[k]||(P[k]=newP(k));
+  const MTX={fcb:{},f3b:{},dbl:{},trp:{}};
+  const mtxAdd=(m,aK,bK,fold)=>{
+    const row=(MTX[m][bK]||(MTX[m][bK]={}));           // keyed defender -> attacker
+    const c=(row[aK]||(row[aK]={n:0,f:0}));
+    c.n++; if(fold)c.f++;
+  };
+  const perHand=[];  // per NLH hand: {sess, stats:{key:{net,vpip,br,calls}}}
+  let heroKey=null, showCount=0;
+
+  for(const hand of hands){
+    if(hand.variant==="plo") continue;
+    const seatKey={},seatName={};
+    for(const p of hand.players){
+      const k=keyOf(p.id,p.name);
+      seatKey[p.seat]=k;seatName[p.seat]=p.name;
+      const e=get(k);e.hands++;
+      if(p.is_hero){e.isHero=true;heroKey=k;}
+    }
+    const st=byStreet(hand), pos=positions(hand), bbAmt=hand.big_blind||1;
+    const pf=st.preflop;
+    const folded=new Set();          // updated during pot replay below
+
+    /* ---- preflop structure ---- */
+    let rc=0,opener=null,pfr=null;
+    const firstVol={};               // seat -> {action, rcBefore}
+    const vpipSeat=new Set();
+    for(const x of pf){
+      if(!x.action.startsWith("post")){
+        if(!(x.seat in firstVol))firstVol[x.seat]={action:x.action,rcBefore:rc};
+        if(x.action==="call"||x.action==="raise")vpipSeat.add(x.seat);
+      }
+      if(x.action==="raise"){rc++;if(rc===1)opener=x.seat;pfr=x.seat;}
+    }
+
+    /* ---- limp-fold ---- */
+    for(const [seatS,fv] of Object.entries(firstVol)){
+      const seat=+seatS;
+      if(fv.action!=="call"||fv.rcBefore!==0)continue;    // not a limp
+      // find first raise after the limp, then the limper's next action
+      let sawLimp=false,sawRaise=false,resp=null;
+      for(const x of pf){
+        if(!sawLimp){if(x.seat===seat&&x.action==="call")sawLimp=true;continue;}
+        if(!sawRaise){if(x.action==="raise")sawRaise=true;continue;}
+        if(x.seat===seat&&!x.action.startsWith("post")){resp=x.action;break;}
+      }
+      if(sawRaise&&resp){
+        const e=get(seatKey[seat]);e.lfOpp++;
+        if(resp==="fold")e.lf++;else if(resp==="call")e.lc++;else if(resp==="raise")e.lr++;
+      }
+    }
+
+    /* ---- steal / blind defense ---- */
+    for(const p of hand.players){
+      const hp=pos[p.seat],e=get(seatKey[p.seat]);
+      if(hp==="BB"){e.bbN++;if(vpipSeat.has(p.seat)||firstVol[p.seat]?.action==="check")
+        {if(vpipSeat.has(p.seat))e.bbV++;}}
+      if(["BTN","CO","SB"].includes(hp)){
+        let rb=false,reached=false,act=null;
+        for(const x of pf){if(x.seat===p.seat&&!x.action.startsWith("post")){act=x.action;reached=true;break;}
+          if(x.action==="raise")rb=true;}
+        if(reached&&!rb){e.stealOpp++;if(act==="raise")e.steal++;}
+      }
+      if(["SB","BB"].includes(hp)){
+        let fr=null;for(const x of pf){if(x.action==="raise"){fr=x.seat;break;}}
+        if(fr!=null&&fr!==p.seat&&["BTN","CO","SB"].includes(pos[fr])){
+          let after=false,resp=null;
+          for(const x of pf){if(x.seat===fr&&x.action==="raise")after=true;
+            else if(after&&x.seat===p.seat&&!x.action.startsWith("post")){resp=x.action;break;}}
+          if(resp){
+            if(hp==="BB"){e.fBBOpp++;if(resp==="fold")e.fBB++;}
+            else{e.fSBOpp++;if(resp==="fold")e.fSB++;}
+          }
+        }
+      }
+    }
+
+    /* ---- 3-bet matrix: B opened, A raised after, B responds ---- */
+    if(opener!=null&&rc>=2){
+      let openSeen=false,threeSeat=null,resp=null;
+      for(const x of pf){
+        if(!openSeen){if(x.seat===opener&&x.action==="raise")openSeen=true;continue;}
+        if(threeSeat==null){if(x.action==="raise")threeSeat=x.seat;continue;}
+        if(x.seat===opener&&!x.action.startsWith("post")){resp=x.action;break;}
+      }
+      if(threeSeat!=null&&resp!=null){
+        const fold=resp==="fold";
+        mtxAdd("f3b",seatKey[threeSeat],seatKey[opener],fold);
+        const e=get(seatKey[opener]);e.f3b.n++;if(fold)e.f3b.f++;
+      }
+    }
+
+    /* ---- pot replay: sizing, fold-vs-size, XR, donk, probe, per-action pct ---- */
+    let potPrev=(hand.ante||0)*hand.players.length,commit={},street="preflop";
+    let prevAggr=null;               // last bettor/raiser of the previous street
+    let streetAggr=null;             // last bettor/raiser so far on this street
+    let firstBet=null;               // {seat,bucket,ratio} first wager of this street
+    let respondedToBet=new Set();    // seats whose response to firstBet is recorded
+    let checkedBefore=new Set();     // seats that checked before the first bet
+    let xrCounted=new Set();
+    let aggrActed=new Set();         // has prevAggr acted on this street yet?
+    let probeDone=new Set();
+    let flopHadBet=false,turnHadBet=false;
+    const actPct={};                 // action index -> % of pot (for the range library)
+    const showdown=!!hand.showdown;
+    const wonSeat=new Set((hand.awards||[]).map(w=>w.seat));
+
+    const streetOf=a=>a.street;
+    for(let i=0;i<hand.actions.length;i++){
+      const a=hand.actions[i];
+      if(streetOf(a)!==street){
+        // street transition
+        potPrev+=Object.values(commit).reduce((x,y)=>x+y,0);
+        commit={};
+        if(street==="flop")flopHadBet=!!firstBet;
+        if(street==="turn")turnHadBet=!!firstBet;
+        prevAggr=streetAggr??prevAggr;
+        if(street==="preflop")prevAggr=pfr;
+        streetAggr=null;firstBet=null;respondedToBet=new Set();
+        checkedBefore=new Set();xrCounted=new Set();aggrActed=new Set();
+        street=streetOf(a);
+      }
+      const post=STREETS.includes(street);
+      const potBefore=potPrev+Object.values(commit).reduce((x,y)=>x+y,0);
+      const k=seatKey[a.seat],e=k?get(k):null;
+
+      if(a.action==="fold")folded.add(a.seat);
+
+      /* responses to the street's first bet (fold-vs-size + fcb/dbl/trp handled later) */
+      if(post&&firstBet&&a.seat!==firstBet.seat&&!respondedToBet.has(a.seat)
+         &&["fold","call","raise"].includes(a.action)){
+        respondedToBet.add(a.seat);
+        if(e){const fs=e.foldSize[firstBet.bucket];fs.n++;if(a.action==="fold")fs.f++;}
+        /* check-raise: checked earlier this street, now facing the bet */
+        if(checkedBefore.has(a.seat)&&!xrCounted.has(a.seat)&&e){
+          xrCounted.add(a.seat);e.xrOpp++;if(a.action==="raise")e.xr++;
+        }
+      }
+
+      /* donk: acting before the previous-street aggressor on a later street */
+      if(post&&prevAggr!=null&&a.seat!==prevAggr&&!aggrActed.has("y")
+         &&!folded.has(prevAggr)&&hand.players.some(p=>p.seat===prevAggr)
+         &&!firstBet&&["check","bet"].includes(a.action)&&e){
+        e.donkOpp++;if(a.action==="bet")e.donk++;
+      }
+      if(post&&a.seat===prevAggr)aggrActed.add("y");
+
+      /* probe turn: flop checked through, first chance to bet the turn */
+      if(street==="turn"&&!flopHadBet&&!firstBet&&["check","bet"].includes(a.action)
+         &&e&&!probeDone.has(a.seat)){
+        probeDone.add(a.seat);e.probeOpp++;if(a.action==="bet")e.probe++;
+      }
+
+      if(a.action==="check"&&post&&!firstBet)checkedBefore.add(a.seat);
+
+      /* wagers */
+      if(["bet","raise"].includes(a.action)){
+        const prev=commit[a.seat]||0,lvl=a.amount||0,delta=Math.max(0,lvl-prev);
+        if(post&&potBefore>0)actPct[i]=Math.round(100*delta/potBefore);
+        if(post&&a.action==="bet"&&!firstBet){
+          const ratio=potBefore>0?delta/potBefore:1;
+          const bucket=bucketOf(ratio);
+          firstBet={seat:a.seat,bucket,ratio};
+          if(e){
+            e.mix[bucket]++;
+            if(showdown&&!folded.has(a.seat)){
+              // credited after the hand: needs "never folded" — checked below via foldedAll
+              (e._pending||(e._pending=[])).push({bucket,seat:a.seat,street});
+            }
+          }
+        }
+        streetAggr=a.seat;
+      }
+      /* apply chip movement to commits */
+      if(a.action==="post_missing_small_blind"){potPrev+=(a.amount||0);}
+      else if(["post_small_blind","post_big_blind","post_missed_big_blind","call","bet","raise"].includes(a.action)){
+        const prev=commit[a.seat]||0,lvl=a.amount||0;
+        commit[a.seat]=Math.max(prev,lvl);
+      }
+    }
+    if(street==="flop")flopHadBet=!!firstBet;
+    if(street==="turn")turnHadBet=!!firstBet;
+
+    /* settle sizing honesty + river-bet honesty now that folds are final */
+    for(const k of Object.keys(P)){
+      const e=P[k];
+      if(!e._pending)continue;
+      for(const pend of e._pending){
+        if(folded.has(pend.seat))continue;
+        const h2=e.honesty[pend.bucket];h2.n++;
+        const won=wonSeat.has(pend.seat);
+        if(won)h2.w++;
+        if(pend.street==="river"){e.rivBet++;if(won)e.rivWin++;}
+      }
+      delete e._pending;
+    }
+
+    /* ---- c-bet chain matrices (flop cbet -> turn barrel -> river barrel) ---- */
+    if(pfr!=null&&(st.flop||[]).length){
+      const fl=st.flop,aK=seatKey[pfr];
+      const foldedPf=new Set(pf.filter(x=>x.action==="fold").map(x=>x.seat));
+      const sawFlop=new Set(hand.players.map(p=>p.seat).filter(s=>!foldedPf.has(s)));
+      const aFirst=fl.find(x=>x.seat===pfr);
+      const priorBet=fl.some(x=>(x.action==="bet")&&fl.indexOf(x)<fl.indexOf(aFirst));
+      if(aFirst&&aFirst.action==="bet"&&!priorBet){
+        for(const bSeat of sawFlop){
+          if(bSeat===pfr)continue;
+          const bResp=fl.find(x=>x.seat===bSeat&&fl.indexOf(x)>fl.indexOf(aFirst)&&
+            ["fold","call","raise"].includes(x.action));
+          if(!bResp)continue;
+          const bK=seatKey[bSeat],fold=bResp.action==="fold";
+          mtxAdd("fcb",aK,bK,fold);
+          const e=get(bK);e.fcb.n++;if(fold)e.fcb.f++;
+          if(bResp.action!=="call")continue;
+          const tu=st.turn||[];
+          const aT=tu.find(x=>x.seat===pfr);
+          if(!aT||aT.action!=="bet")continue;
+          const bT=tu.find(x=>x.seat===bSeat&&tu.indexOf(x)>tu.indexOf(aT)&&
+            ["fold","call","raise"].includes(x.action));
+          if(!bT)continue;
+          const foldT=bT.action==="fold";
+          mtxAdd("dbl",aK,bK,foldT);
+          const e2=get(bK);e2.dbl.n++;if(foldT)e2.dbl.f++;
+          if(bT.action!=="call")continue;
+          const ri=st.river||[];
+          const aR=ri.find(x=>x.seat===pfr);
+          if(!aR||aR.action!=="bet")continue;
+          const bR=ri.find(x=>x.seat===bSeat&&ri.indexOf(x)>ri.indexOf(aR)&&
+            ["fold","call","raise"].includes(x.action));
+          if(!bR)continue;
+          const foldR=bR.action==="fold";
+          mtxAdd("trp",aK,bK,foldR);
+          const e3=get(bK);e3.trp.n++;if(foldR)e3.trp.f++;
+        }
+      }
+    }
+
+    /* ---- showdown range library ---- */
+    for(const s of (hand.shows||[])){
+      const raw=s.raw_cards||s.cards||[];
+      if(raw.length!==2||raw.includes(null))continue;
+      if(folded.has(s.seat))continue;
+      const k=seatKey[s.seat];if(!k)continue;
+      const fv=firstVol[s.seat];
+      let cat;
+      if(!fv)cat="blind walk";
+      else if(fv.action==="raise")cat=fv.rcBefore===0?"open":(fv.rcBefore===1?"3-bet":"4-bet+");
+      else if(fv.action==="call")cat=fv.rcBefore===0?"limp":(fv.rcBefore===1?"call vs open":"call 3-bet+");
+      else cat="BB check";
+      // per-street compact line for this seat
+      const parts=[];
+      for(const stName of ["preflop","flop","turn","river"]){
+        const acts=(st[stName]||[]).filter(x=>x.seat===s.seat&&!x.action.startsWith("post"));
+        if(!acts.length)continue;
+        const lab={preflop:"pre",flop:"F",turn:"T",river:"R"}[stName];
+        const seq=acts.map(x=>{
+          const i=hand.actions.indexOf(x);
+          if(x.action==="bet")return "bet"+(actPct[i]!=null?" "+actPct[i]+"%":"");
+          if(x.action==="raise")return stName==="preflop"?"raise":"raise"+(actPct[i]!=null?" "+actPct[i]+"%":"");
+          if(x.action==="check")return "check";
+          if(x.action==="call")return "call";
+          return x.action;
+        }).join(" → ");
+        parts.push(`<b>${lab}:</b> ${seq}`);
+      }
+      const net=(endStacks(hand)[s.seat]-(hand.players.find(p=>p.seat===s.seat)||{}).stack)/bbAmt;
+      get(k).shows.push({cards:s.cards.slice(),token:handToken(s.cards),cat,
+        line:parts.join(" &middot; "),won:wonSeat.has(s.seat),net,
+        sess:hand.game_id,num:hand.number});
+      showCount++;
+    }
+
+    /* ---- per-hand per-player stats for tilt ---- */
+    const end=endStacks(hand),hs={};
+    for(const p of hand.players){
+      const k=seatKey[p.seat];
+      let br=0,calls=0;
+      for(const stName of STREETS)for(const x of (st[stName]||[])){
+        if(x.seat!==p.seat)continue;
+        if(x.action==="bet"||x.action==="raise")br++;else if(x.action==="call")calls++;
+      }
+      hs[k]={net:(end[p.seat]-p.stack)/bbAmt,vpip:vpipSeat.has(p.seat)?1:0,br,calls};
+    }
+    perHand.push({sess:hand.game_id,stats:hs});
+  }
+
+  /* ---- tilt: window of 10 hands after a >=25bb loss, per player, per session ---- */
+  const tilt={};
+  const sessions={};
+  perHand.forEach((h,i)=>{(sessions[h.sess]||(sessions[h.sess]=[])).push(h);});
+  for(const k of Object.keys(P)){
+    const t={trig:0,n:0,v:0,br:0,calls:0,net:0,bn:0,bv:0,bbr:0,bcalls:0};
+    for(const sess of Object.values(sessions)){
+      let windowLeft=0;
+      for(const h of sess){
+        const s=h.stats[k];if(!s)continue;
+        t.bn++;t.bv+=s.vpip;t.bbr+=s.br;t.bcalls+=s.calls;
+        if(windowLeft>0){t.n++;t.v+=s.vpip;t.br+=s.br;t.calls+=s.calls;t.net+=s.net;windowLeft--;}
+        if(s.net<=-25){t.trig++;windowLeft=10;}
+      }
+    }
+    tilt[k]=t;
+  }
+
+  const players=Object.values(P).sort((a,b)=>b.hands-a.hands);
+  return {players,P,MTX,tilt,heroKey,showCount,nlh:perHand.length};
+}
+
+/* ---------- rendering ---------- */
+const MTX_DEFS=[
+  {key:"fcb",label:"Fold to flop c-bet"},
+  {key:"f3b",label:"Fold to 3-bet"},
+  {key:"dbl",label:"Fold to turn barrel"},
+  {key:"trp",label:"Fold to river barrel"},
+];
+let MTX_SEL="fcb";
+function cellColor(p){
+  // sequential single-hue (gold) ramp; text flips dark when the fill is strong
+  const a=0.06+0.72*(p/100);
+  return {bg:`rgba(217,164,65,${a.toFixed(3)})`,fg:a>0.42?"#0b211c":"var(--ink)"};
+}
+function renderRamp(){
+  const box=document.getElementById("rampBox");
+  box.innerHTML=[0,25,50,75,100].map(p=>`<i style="background:${cellColor(p).bg}"></i>`).join("");
+}
+function renderMatrix(){
+  const {players,MTX,heroKey}=MODEL;
+  const list=players.filter(p=>p.hands>=30);
+  const M=MTX[MTX_SEL];
+  const box=document.getElementById("mtxBox");
+  const pooled=k=>{
+    const e=MODEL.P[k];
+    const c={fcb:e.fcb,f3b:e.f3b,dbl:e.dbl,trp:e.trp}[MTX_SEL];
+    return c;
+  };
+  let html='<table class="mtx"><thead><tr><th class="rowh no-sort">defender \\ attacker</th>'+
+    '<th class="colh all no-sort">ALL</th>'+
+    list.map(p=>`<th class="colh no-sort ${p.isHero?'hero':''}">${p.name}</th>`).join("")+
+    "</tr></thead><tbody>";
+  for(const def of list){
+    html+=`<tr><th class="rowh no-sort ${def.isHero?'hero':''}">${def.name}</th>`;
+    const pc=pooled(def.name);
+    const cells=[{c:pc,attacker:"anyone",cls:"allcol"}].concat(
+      list.map(att=>({c:(M[def.name]||{})[att.name],attacker:att.name,cls:""})));
+    for(const {c,attacker,cls} of cells){
+      if(def.name===attacker){html+=`<td class="cell ${cls}"></td>`;continue;}
+      if(!c||c.n<5){
+        html+=`<td class="cell ${cls}" data-tip="${def.name} vs ${attacker}: ${c?c.f+"/"+c.n:"no"} sample${c&&c.n===1?"":"s"} — too few">&middot;</td>`;
+        continue;
+      }
+      const p=100*c.f/c.n,{bg,fg}=cellColor(p);
+      html+=`<td class="cell hasn ${cls}" style="background:${bg};color:${fg}" `+
+        `data-tip="<b>${def.name}</b> folds <b>${f0(p)}%</b> (${c.f}/${c.n}) to <b>${attacker==="anyone"?"anyone's":attacker+"'s"}</b> ${MTX_DEFS.find(d=>d.key===MTX_SEL).label.replace("Fold to ","")} — ${confOf(c.n).t}">`+
+        `${f0(p)}<small>${c.n}</small></td>`;
+    }
+    html+="</tr>";
+  }
+  html+="</tbody></table>";
+  box.innerHTML=html;
+  hookTips(box);
+}
+function renderMtxChips(){
+  const box=document.getElementById("mtxChips");
+  box.innerHTML=MTX_DEFS.map(d=>
+    `<button class="chip ${d.key===MTX_SEL?'on':''}" data-k="${d.key}">${d.label}</button>`).join("");
+  box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{MTX_SEL=b.dataset.k;renderMtxChips();renderMatrix();});
+}
+const tipEl=document.getElementById("tip");
+function hookTips(root){
+  root.querySelectorAll("[data-tip]").forEach(el=>{
+    el.addEventListener("mousemove",ev=>{
+      tipEl.innerHTML=el.dataset.tip;tipEl.style.display="block";
+      const x=Math.min(ev.clientX+14,window.innerWidth-tipEl.offsetWidth-10);
+      const y=Math.min(ev.clientY+14,window.innerHeight-tipEl.offsetHeight-10);
+      tipEl.style.left=x+"px";tipEl.style.top=y+"px";
+    });
+    el.addEventListener("mouseleave",()=>tipEl.style.display="none");
+  });
+}
+
+function heroRowCls(p){return p.isHero?' class="hero-row"':"";}
+function pcell(x,n,inv){
+  if(!n)return `<td class="dimc" style="color:var(--dim)">&mdash;</td>`;
+  const v=100*x/n;
+  return `<td>${f0(v)}%${tier(n)}</td>`;
+}
+function renderHonesty(){
+  const tb=document.querySelector("#tblHonesty tbody");
+  const rows=MODEL.players.filter(p=>p.mix.s+p.mix.m+p.mix.b>=10);
+  tb.innerHTML=rows.map(p=>{
+    const tot=p.mix.s+p.mix.m+p.mix.b;
+    const seg=(k,cls)=>`<i class="${cls}" style="width:${(100*p.mix[k]/tot).toFixed(1)}%"></i>`;
+    const w=k=>p.honesty[k].n?100*p.honesty[k].w/p.honesty[k].n:null;
+    const ws=w("s"),wm=w("m"),wb=w("b");
+    let read="";
+    if(p.honesty.b.n>=8&&wb!=null){
+      if(wb>=75&&(ws==null||wb-ws>=15))read=`<b>Big bets are value</b> — fold to their overbets, float the small ones.`;
+      else if(wb<=45)read=`Big bets are <b>bluff-heavy</b> — look them up.`;
+    }
+    if(!read&&p.honesty.s.n>=8&&ws!=null&&wb!=null&&Math.abs(ws-wb)<10)
+      read=`No sizing tell — strength doesn't track size.`;
+    if(!read)read=`<span style="color:var(--dim)">sample too thin for a read</span>`;
+    const hcell=k=>{const h=p.honesty[k];return h.n?`<td>${f0(100*h.w/h.n)}%${tier(h.n)}</td>`:`<td style="color:var(--dim)">&mdash;</td>`;};
+    return `<tr${heroRowCls(p)}><td>${p.name}${p.isHero?' <span style="color:var(--gold);font-size:10px">you</span>':''}</td>`+
+      `<td>${tot}</td>`+
+      `<td class="no-sort" style="text-align:left"><span class="mixbar" data-tip="small ${f0(100*p.mix.s/tot)}% · mid ${f0(100*p.mix.m/tot)}% · big ${f0(100*p.mix.b/tot)}%">${seg("s","s")}${seg("m","m")}${seg("b","b")}</span></td>`+
+      hcell("s")+hcell("m")+hcell("b")+
+      `<td class="vcell"><span class="verdict">${read}</span></td></tr>`;
+  }).join("")||`<tr><td colspan="7" class="empty">Not enough postflop bets yet.</td></tr>`;
+  hookTips(tb);
+}
+function renderFoldSize(){
+  const tb=document.querySelector("#tblFoldSize tbody");
+  const rows=MODEL.players.filter(p=>p.foldSize.s.n+p.foldSize.m.n+p.foldSize.b.n>=15);
+  tb.innerHTML=rows.map(p=>{
+    const c=k=>p.foldSize[k];
+    const fp=k=>c(k).n?100*c(k).f/c(k).n:null;
+    const fs=fp("s"),fb=fp("b");
+    let read="";
+    if(c("b").n>=8&&fb!=null){
+      if(fb>=60)read=`Folds to pressure — <b>bluff big</b>, size your value small.`;
+      else if(fb<=30)read=`<b>Sticky vs big bets</b> — never overbet-bluff; overbet value only.`;
+    }
+    if(!read&&fs!=null&&c("s").n>=8&&fs<=25)read=`Calls small bets with anything — thin value-bet small, don't min-bluff.`;
+    if(!read)read=`<span style="color:var(--dim)">sample too thin for a read</span>`;
+    const cell=k=>{const x=c(k);return x.n?`<td>${f0(100*x.f/x.n)}%${tier(x.n)}</td>`:`<td style="color:var(--dim)">&mdash;</td>`;};
+    return `<tr${heroRowCls(p)}><td>${p.name}${p.isHero?' <span style="color:var(--gold);font-size:10px">you</span>':''}</td>`+
+      `<td>${c("s").n+c("m").n+c("b").n}</td>`+cell("s")+cell("m")+cell("b")+
+      `<td class="vcell"><span class="verdict">${read}</span></td></tr>`;
+  }).join("")||`<tr><td colspan="6" class="empty">Not enough faced bets yet.</td></tr>`;
+}
+function renderLines(){
+  const tb=document.querySelector("#tblLines tbody");
+  const rows=MODEL.players.filter(p=>p.hands>=50);
+  tb.innerHTML=rows.map(p=>{
+    const c=(x,n)=>n?`${f0(100*x/n)}%<small style="color:var(--dim)"> ${x}/${n}</small>`:"&mdash;";
+    const riv=p.rivBet?`${f0(100*p.rivWin/p.rivBet)}%${tier(p.rivBet)}`:"&mdash;";
+    return `<tr${heroRowCls(p)}><td>${p.name}${p.isHero?' <span style="color:var(--gold);font-size:10px">you</span>':''}</td>`+
+      `<td>${p.hands}</td>`+
+      `<td>${c(p.xr,p.xrOpp)}</td><td>${c(p.donk,p.donkOpp)}</td><td>${c(p.probe,p.probeOpp)}</td>`+
+      `<td>${c(p.lf,p.lfOpp)}</td><td>${riv}</td>`+
+      `<td>${c(p.fcb.f,p.fcb.n)}</td><td>${c(p.dbl.f,p.dbl.n)}</td><td>${c(p.trp.f,p.trp.n)}</td></tr>`;
+  }).join("");
+}
+function renderTilt(){
+  const tb=document.querySelector("#tblTilt tbody");
+  const rows=MODEL.players.filter(p=>p.hands>=50);
+  tb.innerHTML=rows.map(p=>{
+    const t=MODEL.tilt[p.name];
+    if(!t||t.n<15)return `<tr${heroRowCls(p)}><td>${p.name}</td><td>${t?t.trig:0}</td>`+
+      `<td colspan="7" style="color:var(--dim)">not enough post-loss hands yet</td><td></td></tr>`;
+    const bv=100*t.bv/t.bn,av=100*t.v/t.n,dv=av-bv;
+    const baf=t.bcalls?t.bbr/t.bcalls:(t.bbr?9.9:0),aaf=t.calls?t.br/t.calls:(t.br?9.9:0);
+    const net100=100*t.net/t.n;
+    let read="";
+    if(dv>=8)read=`<b>Tilts loose</b> — after they lose big, value-bet them relentlessly.`;
+    else if(dv<=-8)read=`Tightens after losses — steal more, bluff less right after stacking them.`;
+    else read=`<span style="color:var(--dim)">steady after losses</span>`;
+    if(net100<=-40&&dv>=4)read=`<b>Tilts and burns</b> (${f0(net100)} bb/100 after losses) — the window after they lose a big pot is your most profitable spot.`;
+    return `<tr${heroRowCls(p)}><td>${p.name}${p.isHero?' <span style="color:var(--gold);font-size:10px">you</span>':''}</td>`+
+      `<td>${t.trig}</td><td>${t.n}</td>`+
+      `<td>${f1(bv)}%</td><td>${f1(av)}%</td>`+
+      `<td class="${dv>=0?'neg-net':'pos-net'}" style="color:${Math.abs(dv)<4?'var(--dim)':''}">${dv>=0?"+":""}${f1(dv)}</td>`+
+      `<td>${f1(baf)}</td><td>${f1(aaf)}</td>`+
+      `<td class="${net100>=0?'pos-net':'neg-net'}">${net100>=0?"+":""}${f0(net100)}</td>`+
+      `<td class="vcell"><span class="verdict">${read}</span></td></tr>`;
+  }).join("");
+}
+function renderPos(){
+  const tb=document.querySelector("#tblPos tbody");
+  const rows=MODEL.players.filter(p=>p.hands>=50);
+  tb.innerHTML=rows.map(p=>{
+    const cell=(x,n)=>n>=8?`${f0(100*x/n)}%${tier(n)}`:"&mdash;";
+    const fbb=p.fBBOpp?100*p.fBB/p.fBBOpp:null;
+    const stl=p.stealOpp?100*p.steal/p.stealOpp:null;
+    let read="";
+    if(fbb!=null&&p.fBBOpp>=12){
+      if(fbb>=60)read=`<b>Surrenders the BB</b> — steal any two from CO/BTN.`;
+      else if(fbb<=25)read=`Defends BB with anything — steal tighter, value-bet wide postflop instead.`;
+    }
+    if(!read&&stl!=null&&p.stealOpp>=15&&stl>=40)read=`Steals a lot — 3-bet their late-position opens light.`;
+    if(!read&&stl!=null&&p.stealOpp>=15&&stl<=12)read=`Never steals — late-position raises are real hands.`;
+    if(!read)read=`<span style="color:var(--dim)">no strong positional leak yet</span>`;
+    return `<tr${heroRowCls(p)}><td>${p.name}${p.isHero?' <span style="color:var(--gold);font-size:10px">you</span>':''}</td>`+
+      `<td>${p.hands}</td>`+
+      `<td>${cell(p.steal,p.stealOpp)}</td><td>${cell(p.fBB,p.fBBOpp)}</td><td>${cell(p.fSB,p.fSBOpp)}</td>`+
+      `<td>${cell(p.bbV,p.bbN)}</td>`+
+      `<td class="vcell"><span class="verdict">${read}</span></td></tr>`;
+  }).join("");
+}
+/* ---------- bluff anatomy (data precomputed by bluffs.py -> bluff_analysis.json) ---------- */
+let BLUFF=null;
+function anatBar(st,label){
+  const n=st.value+st.semi+st.thin+st.air;
+  if(!n)return `<span style="color:var(--dim)">&mdash;</span>`;
+  const seg=(k,cls)=>st[k]?`<i class="${cls}" style="width:${(100*st[k]/n).toFixed(1)}%"></i>`:"";
+  const tip=`<b>${label}</b> — ${n} shown aggressive streets:<br>`+
+    `value ${st.value} (${f0(100*st.value/n)}%) · semi ${st.semi} (${f0(100*st.semi/n)}%) · `+
+    `thin ${st.thin} (${f0(100*st.thin/n)}%) · air ${st.air} (${f0(100*st.air/n)}%)`;
+  return `<span class="anat" data-tip="${tip.replace(/"/g,"&quot;")}">${seg("thin","thn")}${seg("value","val")}${seg("semi","sem")}${seg("air","air")}</span>`+
+    `<small style="color:var(--dim)"> ${n}</small>`;
+}
+function fmtCards(cs){return cs.map(cardHTML).join("");}
+function renderBluff(){
+  const sec=document.getElementById("bluffSec");
+  if(!BLUFF||!BLUFF.players){sec.style.display="none";return;}
+  const tb=document.querySelector("#tblBluff tbody");
+  const rows=MODEL.players
+    .map(p=>({name:p.name,isHero:p.isHero,e:BLUFF.players[p.name]}))
+    .filter(r=>r.e&&["flop","turn","river"].some(s=>{
+      const st=r.e.streets[s];return st.value+st.semi+st.thin+st.air>0;}));
+  tb.innerHTML=rows.map(r=>{
+    const e=r.e,riv=e.streets.river;
+    const rn=riv.value+riv.semi+riv.thin+riv.air;
+    const airThin=rn?100*(riv.air+riv.thin)/rn:null;
+    const ra=e.river_air,raTot=ra.busted_fd+ra.busted_sd+ra.other;
+    const exTip=e.examples&&e.examples.length?
+      "<b>shown river bluffs</b><br>"+e.examples.slice(-5).map(x=>
+        `${x.cards.join("")} on ${x.board.join(" ")} — ${x.won?"won":"lost"}`).join("<br>"):"";
+    const origins=raTot?
+      `<span data-tip="${exTip.replace(/"/g,"&quot;")}">${ra.busted_fd?ra.busted_fd+" busted FD · ":""}${ra.busted_sd?ra.busted_sd+" busted SD · ":""}${ra.other?ra.other+" plain air":""}</span>`
+      :`<span style="color:var(--dim)">none shown</span>`;
+    const bf=e.bet_fold;
+    let read="";
+    if(rn>=10&&airThin!=null){
+      if(airThin>=35){
+        read=`<b>Bluff-catch their rivers</b> — ${f0(airThin)}% of shown river bets were air or thin.`;
+        if(ra.busted_sd>=3&&ra.busted_sd>=2*Math.max(1,ra.busted_fd))read+=` Mostly <b>busted straight draws</b> — call when the obvious straight misses.`;
+        else if(ra.busted_fd>=3&&ra.busted_fd>=2*Math.max(1,ra.busted_sd))read+=` Mostly <b>busted flush draws</b> — call when the flush misses.`;
+      }else if(airThin<=12)read=`<b>River bets are value</b> — fold your marginal bluff-catchers.`;
+    }
+    if(!read){
+      const fl=e.streets.flop,fn=fl.value+fl.semi+fl.thin+fl.air;
+      if(fn>=10&&100*fl.semi/fn>=40)read=`Flop aggression is draw-heavy (${f0(100*fl.semi/fn)}% semi-bluffs) — raise and make the draws pay.`;
+    }
+    if(!read&&bf.n>=8){
+      const bfp=100*bf.f/bf.n;
+      if(bfp>=60)read=`Gives up when raised (bet-folds ${f0(bfp)}%) — raise their bets liberally.`;
+      else if(bfp<=25)read=`Doesn't bet-fold (${f0(bfp)}%) — raise their bets with value only.`;
+    }
+    if(!read)read=`<span style="color:var(--dim)">no strong read yet</span>`;
+    return `<tr${r.isHero?' class="hero-row"':''}><td>${r.name}${r.isHero?' <span style="color:var(--gold);font-size:10px">you</span>':''}</td>`+
+      `<td>${anatBar(e.streets.flop,r.name+" · flop")}</td>`+
+      `<td>${anatBar(e.streets.turn,r.name+" · turn")}</td>`+
+      `<td>${anatBar(e.streets.river,r.name+" · river")}</td>`+
+      `<td>${rn>=5?f0(airThin)+"%"+tier(rn):"&mdash;"}</td>`+
+      `<td style="text-align:left">${origins}</td>`+
+      `<td>${bf.n>=5?f0(100*bf.f/bf.n)+"%"+tier(bf.n):"&mdash;"}</td>`+
+      `<td class="vcell"><span class="verdict">${read}</span></td></tr>`;
+  }).join("");
+  const g=BLUFF.global,ga=g.river_air||{};
+  const totAir=(ga.busted_fd||0)+(ga.busted_sd||0)+(ga.other||0);
+  document.getElementById("bluffGlobal").innerHTML=
+    `<b>Table-wide:</b> of ${g.river_bets} shown aggressive rivers, ${g.river_value} were value (${f0(100*g.river_value/Math.max(1,g.river_bets))}%). `+
+    `The ${totAir} pure-air bluffs came from: <b>${ga.busted_sd||0} busted straight draws</b>, <b>${ga.busted_fd||0} busted flush draws</b>, ${ga.other||0} plain air. `+
+    `When this table bluffs a river, it's usually a missed draw — if the obvious draw bricked and they fire, that's the moment to call.`;
+  hookTips(tb);
+}
+
+/* ---------- hero hand matrix (data precomputed by hand_matrix.py) ---------- */
+let HMX=null;
+const HMX_RANKS="AKQJT98765432";
+function hmxColor(bb){
+  const a=Math.min(1,Math.abs(bb)/80)*0.72+0.10;
+  return bb>=0?{bg:`rgba(111,191,142,${a.toFixed(3)})`,fg:a>0.5?"#0b211c":"var(--ink)"}
+              :{bg:`rgba(199,90,74,${a.toFixed(3)})`,fg:a>0.5?"#0b211c":"var(--ink)"};
+}
+function renderHmx(){
+  const sec=document.getElementById("hmxSec");
+  if(!HMX||!HMX.cells){sec.style.display="none";return;}
+  let html='<table class="hmx"><tbody>';
+  for(let i=0;i<13;i++){
+    html+="<tr>";
+    for(let j=0;j<13;j++){
+      const r1=HMX_RANKS[Math.min(i,j)],r2=HMX_RANKS[Math.max(i,j)];
+      const tok=i===j?r1+r2:(i<j?r1+r2+"s":r1+r2+"o");
+      const c=HMX.cells[tok];
+      if(!c){html+=`<td data-tip="<b>${tok}</b> — never dealt (in known-card hands)"><span class="t">${tok}</span></td>`;continue;}
+      const {bg,fg}=hmxColor(c.bb);
+      const per=c.bb/c.n;
+      html+=`<td class="dealt" style="background:${bg}" data-tip="<b>${tok}</b> — dealt ${c.n}× · net <b>${c.bb>=0?"+":""}${f1(c.bb)}bb</b> · ${per>=0?"+":""}${f1(per)}bb per deal">`+
+        `<span class="t" style="color:${fg}">${tok}</span><span class="v" style="color:${fg};opacity:.85">${c.bb>=0?"+":""}${f0(c.bb)}</span></td>`;
+    }
+    html+="</tr>";
+  }
+  html+="</tbody></table>";
+  document.getElementById("hmxBox").innerHTML=html;
+  document.getElementById("hmxRamp").innerHTML=
+    [-80,-40,0,40,80].map(v=>`<i style="background:${v===0?'rgba(236,230,214,.08)':hmxColor(v).bg}"></i>`).join("");
+  document.getElementById("hmxMeta").textContent=
+    `${HMX.hands_known} known-card hands · ${Object.keys(HMX.cells).length}/169 combos seen`;
+  hookTips(document.getElementById("hmxBox"));
+}
+
+const CAT_ORDER=["4-bet+","3-bet","open","limp","call vs open","call 3-bet+","BB check","blind walk"];
+function renderLibrary(){
+  const box=document.getElementById("libBox");
+  const players=MODEL.players.filter(p=>p.shows.length);
+  box.innerHTML=players.map(p=>{
+    const byCat={};
+    p.shows.forEach(s=>{(byCat[s.cat]||(byCat[s.cat]=[])).push(s);});
+    const catHTML=CAT_ORDER.filter(c=>byCat[c]).map(c=>{
+      const list=byCat[c].sort((a,b)=>b.num-a.num);
+      const toks=[...new Set(list.map(s=>s.token))].join(", ");
+      return `<div class="cat"><div class="cath">${c} &middot; ${list.length} shown &middot; <b>${toks}</b></div>`+
+        list.map(s=>
+          `<div class="sd"><span class="cards">${s.cards.map(cardHTML).join(" ")}</span>`+
+          `<span class="line">${s.line}</span>`+
+          `<span class="res ${s.net>=0?'pos-net':'neg-net'}">${s.won?"won":"lost"} ${s.net>=0?"+":""}${f1(s.net)}bb</span></div>`
+        ).join("")+"</div>";
+    }).join("");
+    return `<details class="player"${p.isHero?" open":""}><summary>${p.name}${p.isHero?' <span style="color:var(--gold);font-size:11px">your table image</span>':''}`+
+      `<span class="n">${p.shows.length} revealed hands</span></summary>`+
+      `<div class="body">${catHTML}</div></details>`;
+  }).join("")||`<div class="empty">No showdown reveals parsed.</div>`;
+}
+
+/* ---------- sortable tables ---------- */
+function makeSortable(tableId){
+  const table=document.getElementById(tableId);
+  table.querySelectorAll("th:not(.no-sort)").forEach((th,i)=>{
+    th.addEventListener("click",()=>{
+      const idx=[...th.parentNode.children].indexOf(th);
+      const tb=table.querySelector("tbody");
+      const rows=[...tb.querySelectorAll("tr")];
+      const asc=th.classList.contains("sorted")&&!th.classList.contains("asc");
+      table.querySelectorAll("th").forEach(x=>x.classList.remove("sorted","asc"));
+      th.classList.add("sorted");if(asc)th.classList.add("asc");
+      const val=r=>{
+        const t=(r.children[idx]||{}).textContent||"";
+        const m=t.replace(/[,%+]/g,"").match(/-?\d+(\.\d+)?/);
+        return m?parseFloat(m[0]):(idx===0?t:-1e18);
+      };
+      rows.sort((a,b)=>{
+        const va=val(a),vb=val(b);
+        if(typeof va==="string")return asc?va.localeCompare(vb):vb.localeCompare(va);
+        return asc?va-vb:vb-va;
+      });
+      rows.forEach(r=>tb.appendChild(r));
+    });
+  });
+}
+
+/* ---------- boot ---------- */
+(function(){
+  const bluffP=fetch("data/bluff_analysis.json").then(r=>r.ok?r.json():null).catch(()=>null);
+  const hmxP=fetch("data/hand_matrix.json").then(r=>r.ok?r.json():null).catch(()=>null);
+  Promise.all([HUB.load(),bluffP,hmxP]).then(([hub,b,hm])=>{
+    FILE_MAP=(hub.map&&typeof hub.map==="object")?hub.map:{};
+    BLUFF=b;HMX=(hm&&hm.players)?hm.players[hub.selected]:null;
+    document.title="Extended — "+hub.selected;
+    const hands=hub.hands;
+    MODEL=analyze(hands);
+    document.getElementById("hdrMeta").innerHTML=
+      `<span><span class="k">nlh hands</span><b>${MODEL.nlh}</b></span>`+
+      `<span><span class="k">players</span><b>${MODEL.players.length}</b></span>`+
+      `<span><span class="k">revealed hands</span><b>${MODEL.showCount}</b></span>`;
+    renderRamp();renderMtxChips();renderMatrix();
+    renderHonesty();renderFoldSize();renderBluff();renderLines();renderTilt();renderPos();renderHmx();renderLibrary();
+    ["tblHonesty","tblFoldSize","tblLines","tblTilt","tblPos"].forEach(makeSortable);
+  }).catch(e=>{
+    document.getElementById("main").innerHTML=
+      `<div class="note">Couldn't load <b>parsed_hands.json</b> — run <b>python3 build.py</b> and serve this folder
+      (<b>python3 -m http.server 8000</b>), then open this page via http://localhost:8000/extended-stats.html.</div>`;
+  });
+})();
+</script>
+</body>
+</html>

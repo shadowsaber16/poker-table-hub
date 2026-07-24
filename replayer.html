@@ -1,0 +1,1200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hand Replayer — PokerNow</title>
+<style>
+  :root{
+    /* palette — desaturated felt + warm chip accents */
+    --table-deep:#0b211c;
+    --felt:#15463a;
+    --felt-edge:#0a1c17;
+    --rail:#07140f;
+    --bone:#ece6d6;
+    --ink:#cdd6d1;
+    --dim:#5c706a;
+    --line:#22433a;
+    --gold:#d9a441;      /* dealer button / bet */
+    --blue:#5b9bd1;      /* call */
+    --crimson:#c75a4a;   /* raise / all-in */
+    --green-win:#6fbf8e; /* award */
+    --shadow:rgba(0,0,0,.45);
+    --ui:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:var(--ui);color:var(--ink);
+    background:
+      radial-gradient(120% 90% at 50% -10%, #123a30 0%, var(--table-deep) 55%, #061310 100%);
+    display:flex;flex-direction:column;min-height:100vh;
+  }
+
+  /* ---- top bar ---- */
+  header{
+    display:flex;align-items:center;gap:20px;flex-wrap:wrap;
+    padding:14px 22px;border-bottom:1px solid var(--line);
+    background:rgba(6,18,14,.6);backdrop-filter:blur(6px);
+  }
+  .brand{font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+    font-size:13px;color:var(--bone)}
+  .brand .dot{color:var(--gold)}
+  .meta{display:flex;gap:18px;flex-wrap:wrap;font-family:var(--mono);
+    font-size:12px;color:var(--dim)}
+  .meta b{color:var(--ink);font-weight:600}
+  .meta .k{color:var(--dim);margin-right:5px}
+  .spacer{flex:1}
+  .hand-jump{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--dim)}
+  .hand-jump input{width:64px;background:#0c241d;border:1px solid var(--line);
+    color:var(--bone);font-family:var(--mono);padding:4px 6px;border-radius:6px}
+  .hand-jump select{background:#0c241d;border:1px solid var(--line);color:var(--bone);
+    font-family:var(--mono);font-size:12px;padding:4px 6px;border-radius:6px;max-width:230px}
+  .rev-count{font-family:var(--mono);font-size:11px;color:var(--dim);white-space:nowrap}
+  .rev-count .need{color:var(--gold)} .rev-count .done{color:var(--green)}
+  .caution{font-family:var(--mono);font-size:11px;color:var(--gold);border:1px solid #5a4620;
+    background:rgba(217,164,65,.08);border-radius:999px;padding:2px 9px;cursor:help;white-space:nowrap}
+  .rev-toggle{font-family:var(--mono);font-size:11px;cursor:pointer;border-radius:999px;
+    padding:2px 11px;border:1px solid var(--line);background:#0e271f;color:var(--dim)}
+  .rev-toggle:hover{border-color:var(--gold);color:var(--bone)}
+  .rev-toggle.on{background:#16361f;border-color:var(--green);color:var(--green)}
+  .empty-filter{font-family:var(--mono);font-size:12px;color:var(--dim);
+    border:1px dashed var(--line);border-radius:10px;padding:8px 12px;margin-top:8px;display:none}
+  /* ----- range panel ----- */
+  .range-panel{border-bottom:1px solid var(--line);background:rgba(7,20,15,.4)}
+  .range-panel .rp-bar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:10px 18px;cursor:pointer}
+  .range-panel .rp-title{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--gold);display:flex;align-items:center;gap:8px}
+  .range-panel .rp-ctx{font-family:var(--mono);font-size:11.5px;color:var(--ink)}
+  .range-panel .rp-ctx b{color:var(--bone)} .range-panel .rp-ctx .k{color:var(--dim)}
+  .range-panel .rp-toggle{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--dim)}
+  .range-panel .rp-body{padding:0 18px 16px;display:flex;gap:22px;flex-wrap:wrap;align-items:flex-start}
+  .range-panel.collapsed .rp-body{display:none}
+  .rp-controls{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px}
+  .rp-controls select,.rp-seg{background:#0c241d;border:1px solid var(--line);color:var(--bone);
+    font-family:var(--mono);font-size:11px;padding:4px 7px;border-radius:6px}
+  .rp-seg{display:inline-flex;padding:0;overflow:hidden}
+  .rp-seg button{background:transparent;border:none;color:var(--dim);font-family:var(--mono);font-size:11px;
+    padding:4px 10px;cursor:pointer}
+  .rp-seg button.on{background:var(--gold);color:var(--rail)}
+  .grid13{display:grid;grid-template-columns:repeat(13,1fr);gap:2px;width:min(420px,86vw)}
+  .grid13 .gc{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:3px;
+    font-family:var(--mono);font-size:9px;color:var(--dim);background:#0e1f19;user-select:none}
+  .grid13 .gc.raise{background:#7a5a1e;color:#f3e2bd} .grid13 .gc.open{background:#7a5a1e;color:#f3e2bd}
+  .grid13 .gc.tbet{background:#8a3b2f;color:#f6d9d0}
+  .grid13 .gc.call{background:#2c5a47;color:#cdeede}
+  .grid13 .gc.fold{background:#0e1f19;color:#3a4b45}
+  .grid13 .gc.pair{font-weight:700}
+  .grid13 .gc.hero{outline:2px solid var(--bone);outline-offset:-2px;z-index:2}
+  .rp-side{flex:1;min-width:200px;max-width:340px}
+  .rp-legend{display:flex;gap:12px;flex-wrap:wrap;font-family:var(--mono);font-size:10.5px;color:var(--dim);margin-bottom:10px}
+  .rp-legend span{display:inline-flex;align-items:center;gap:5px}
+  .rp-legend i{width:11px;height:11px;border-radius:3px;display:inline-block}
+  .rp-note{font-size:11.5px;color:var(--dim);line-height:1.5}
+  .rp-note b{color:var(--gold)}
+  .rp-herohand{font-family:var(--mono);font-size:11px;color:var(--ink);margin-bottom:8px}
+  .rp-herohand b{color:var(--bone)}
+  .dev-context{margin-top:10px;font-size:12px;border-radius:8px;border:1px solid var(--line);
+    background:rgba(12,36,29,.5);padding:9px 11px}
+  .dev-context .dh{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--dim);margin-bottom:7px}
+  .dev-context .cause{display:inline-block;font-family:var(--mono);font-size:11px;border-radius:999px;
+    padding:2px 9px;margin-left:6px;border:1px solid var(--line)}
+  .cause.tilt{color:var(--crimson);border-color:#5a2f27;background:rgba(199,90,74,.1)}
+  .cause.carddead{color:var(--blue);border-color:#23414f;background:rgba(91,155,209,.08)}
+  .cause.flow{color:var(--gold);border-color:#5a4620;background:rgba(217,164,65,.08)}
+  .dev-context .summary{color:var(--ink);line-height:1.5;margin:7px 0 9px}
+  .dev-context .summary b{color:var(--bone)}
+  .dev-context .prior{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+  .dev-context .prior li{display:flex;justify-content:space-between;gap:8px;font-family:var(--mono);
+    font-size:11px;padding:4px 0;border-bottom:1px solid rgba(34,67,58,.5)}
+  .dev-context .prior .lbl{color:var(--dim)}
+  .dev-context .prior .res.win{color:var(--green)} .dev-context .prior .res.loss{color:var(--crimson)}
+  .dev-context .prior .res.flat{color:var(--dim)}
+  .dev-context .prior .tag{color:var(--gold)}
+  .dev-context .foot{font-size:11px;color:var(--dim);margin-top:8px;line-height:1.45}
+  .note-box{margin-top:10px;background:var(--panel);border:1px solid var(--line);border-radius:8px;
+    padding:9px 11px}
+  .note-box label{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--dim);display:flex;align-items:center;gap:6px}
+  .note-box .note-saved{margin-left:auto;color:var(--green);font-size:10px;opacity:0;transition:opacity .2s}
+  .note-box .note-saved.show{opacity:1}
+  .note-box input{width:100%;margin-top:7px;background:#081a14;border:1px solid var(--line);
+    color:var(--bone);border-radius:6px;padding:7px 9px;font-family:var(--ui);font-size:12.5px}
+  .note-box input::placeholder{color:var(--dim)}
+  .note-box input:focus{outline:none;border-color:var(--gold)}
+  .nav a{font-size:12px;text-decoration:none;color:var(--dim);margin-left:4px}
+  .nav a:hover{color:var(--bone)}
+
+  /* ---- stage ---- */
+  main{flex:1;display:grid;grid-template-columns:1fr 320px;gap:0;min-height:0}
+  .stage-wrap{position:relative;min-height:0;display:flex;align-items:center;
+    justify-content:center;padding:26px}
+  .table{
+    position:relative;width:min(840px,92%);aspect-ratio:16/10;
+    border-radius:48% / 46%;
+    background:
+      radial-gradient(110% 120% at 50% 30%, #1d5848 0%, var(--felt) 48%, #0f3a2e 100%);
+    box-shadow:
+      0 0 0 14px var(--felt-edge),
+      0 0 0 24px var(--rail),
+      0 30px 60px -12px var(--shadow),
+      inset 0 2px 30px rgba(0,0,0,.35);
+  }
+  .table::after{ /* felt inlay line */
+    content:"";position:absolute;inset:9% 7%;border-radius:48%/46%;
+    border:1px solid rgba(217,164,65,.16);pointer-events:none;
+  }
+
+  /* center: pot + board */
+  .center{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);
+    display:flex;flex-direction:column;align-items:center;gap:12px;width:80%}
+  .pot{font-family:var(--mono);font-size:13px;color:var(--gold);
+    letter-spacing:.05em;display:flex;align-items:center;gap:8px;
+    background:rgba(7,20,15,.5);padding:5px 12px;border-radius:999px;
+    border:1px solid rgba(217,164,65,.3)}
+  .pot .plabel{color:var(--dim);text-transform:uppercase;font-size:10px;letter-spacing:.16em}
+  .board{display:flex;gap:8px;min-height:62px;align-items:center;justify-content:center}
+  .board.run2{margin-top:-4px}
+  .board-row-label{font-family:var(--mono);font-size:9px;color:var(--dim);
+    width:34px;text-align:right;text-transform:uppercase;letter-spacing:.1em}
+
+  /* cards */
+  .card{width:42px;height:60px;border-radius:7px;position:relative;
+    font-family:var(--mono);font-weight:700;flex:none;
+    box-shadow:0 3px 8px rgba(0,0,0,.4);transition:transform .25s ease,opacity .2s}
+  .card.face{background:linear-gradient(180deg,#fbf8ef,#e9e2d0);color:#16201c}
+  .card.back{background:
+      repeating-linear-gradient(45deg,#123a4f 0 6px,#0e2c3c 6px 12px);
+    border:1px solid #1c4a60}
+  .card .r{position:absolute;top:4px;left:6px;font-size:15px;line-height:1}
+  .card .s{position:absolute;bottom:4px;right:6px;font-size:16px;line-height:1}
+  .card.red{color:#b5302a}
+  .card.deal{animation:deal .28s ease both}
+  @keyframes deal{from{transform:translateY(-8px) scale(.9);opacity:0}}
+  .card.mini{width:30px;height:43px;border-radius:5px}
+  .card.mini .r{font-size:11px;top:3px;left:4px}
+  .card.mini .s{font-size:11px;bottom:3px;right:4px}
+
+  /* seat pods */
+  .seat{position:absolute;transform:translate(-50%,-50%);width:150px;
+    display:flex;flex-direction:column;align-items:center;gap:6px;transition:opacity .2s}
+  .seat .holes{display:flex;gap:4px;height:43px}
+  .pod{width:100%;background:rgba(7,20,15,.82);border:1px solid var(--line);
+    border-radius:10px;padding:7px 9px;text-align:center;position:relative;
+    transition:border-color .2s,box-shadow .2s,background .2s}
+  .pod .name{font-size:12px;font-weight:600;color:var(--bone);white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
+  .pod .stack{font-family:var(--mono);font-size:12px;color:var(--blue);margin-top:1px}
+  .seat .equity{font-family:var(--mono);font-size:11px;color:var(--gold);background:rgba(0,0,0,.55);
+    border:1px solid var(--gold);border-radius:6px;padding:1px 6px;margin:3px auto 0;width:max-content;
+    box-shadow:0 1px 4px rgba(0,0,0,.4)}
+  .gto-note{margin-top:10px;font-size:12px;line-height:1.5;padding:8px 10px;border-radius:8px;
+    border:1px solid var(--line);background:rgba(12,36,29,.5)}
+  .gto-note .ok{color:var(--green)} .gto-note .bad{color:var(--crimson)}
+  .gto-note .muted{color:var(--dim)} .gto-note b{color:var(--gold)}
+  .seat .equity .tie{color:var(--dim);font-weight:400}
+  .seat.acting .pod{border-color:var(--gold);
+    box-shadow:0 0 0 1px var(--gold),0 0 22px -2px rgba(217,164,65,.55);
+    background:rgba(36,28,10,.9)}
+  .seat.folded{opacity:.36}
+  .seat.folded .holes{opacity:.4}
+  .badge{position:absolute;top:-9px;left:50%;transform:translateX(-50%);
+    font-size:9px;font-family:var(--mono);letter-spacing:.08em;text-transform:uppercase;
+    padding:2px 7px;border-radius:999px;white-space:nowrap}
+  .badge.allin{background:var(--crimson);color:#fff}
+  .badge.win{background:var(--green-win);color:#06241a}
+  .dealer-btn{position:absolute;width:22px;height:22px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#f4d98a,var(--gold));
+    color:#3a2c08;font-size:11px;font-weight:800;display:flex;align-items:center;
+    justify-content:center;border:1px solid #8c6a1c;box-shadow:0 2px 5px rgba(0,0,0,.5);
+    transform:translate(-50%,-50%);z-index:5}
+  .dealer-btn.dead{filter:grayscale(.7) opacity(.7)}
+  /* chips committed this street */
+  .commit{font-family:var(--mono);font-size:11px;color:var(--gold);min-height:16px;
+    display:flex;align-items:center;gap:5px}
+  .commit .chip{width:11px;height:11px;border-radius:50%;
+    background:radial-gradient(circle at 35% 30%,#f0c45f,#c98a25);
+    border:1px dashed #7a5a16;display:inline-block}
+  .commit.empty{opacity:0}
+
+  /* ---- side panel ---- */
+  .panel{border-left:1px solid var(--line);background:rgba(6,17,13,.55);
+    display:flex;flex-direction:column;min-height:0}
+  .panel h2{font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--dim);margin:0;padding:14px 18px 8px}
+  .now{padding:0 18px 12px}
+  .now .line{font-size:15px;color:var(--bone);font-weight:600;line-height:1.35;min-height:42px}
+  .now .street{font-family:var(--mono);font-size:10px;letter-spacing:.14em;
+    text-transform:uppercase;color:var(--dim);margin-top:4px}
+  .log{flex:1;overflow:auto;padding:6px 0 16px;border-top:1px solid var(--line)}
+  .log .row{font-size:12.5px;padding:5px 18px;color:var(--dim);line-height:1.3;
+    border-left:2px solid transparent}
+  .log .row.past{color:var(--ink)}
+  .log .row.cur{color:var(--bone);background:rgba(217,164,65,.08);
+    border-left-color:var(--gold);font-weight:600}
+  .log .row .ic{display:inline-block;width:14px;color:var(--dim)}
+  .verb-bet{color:var(--gold)} .verb-raise{color:var(--crimson)}
+  .verb-call{color:var(--blue)} .verb-fold{color:var(--dim)}
+  .verb-board{color:var(--bone)} .verb-win{color:var(--green-win)}
+
+  /* ---- controls ---- */
+  footer{border-top:1px solid var(--line);background:rgba(6,18,14,.75);
+    padding:12px 22px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .progress{flex:1;min-width:160px;display:flex;flex-direction:column;gap:5px}
+  .progress .bar{height:5px;background:#0c241d;border-radius:999px;overflow:hidden}
+  .progress .fill{height:100%;background:linear-gradient(90deg,var(--gold),#f0c45f);
+    width:0;transition:width .25s}
+  .progress .lbl{font-family:var(--mono);font-size:11px;color:var(--dim)}
+  button.ctrl{background:#0e271f;border:1px solid var(--line);color:var(--ink);
+    font-size:13px;padding:9px 13px;border-radius:8px;cursor:pointer;
+    display:inline-flex;align-items:center;gap:7px;transition:.15s;font-family:var(--ui)}
+  button.ctrl:hover:not(:disabled){border-color:var(--gold);color:var(--bone)}
+  button.ctrl:disabled{opacity:.35;cursor:not-allowed}
+  button.play{background:var(--gold);color:#1c1407;border-color:var(--gold);font-weight:700}
+  button.play:hover:not(:disabled){background:#f0c45f}
+  .kbd{font-family:var(--mono);font-size:10px;color:var(--dim);margin-left:2px}
+
+  /* ---- loader overlay ---- */
+  .overlay{position:fixed;inset:0;background:rgba(4,12,9,.94);z-index:50;
+    display:flex;align-items:center;justify-content:center;padding:24px}
+  .loader{max-width:460px;text-align:center}
+  .loader h1{font-size:22px;color:var(--bone);margin:0 0 8px;font-weight:700}
+  .loader p{color:var(--dim);font-size:14px;line-height:1.5;margin:0 0 20px}
+  .drop{border:1.5px dashed var(--line);border-radius:14px;padding:30px;
+    cursor:pointer;transition:.2s;background:rgba(12,36,29,.5)}
+  .drop:hover,.drop.over{border-color:var(--gold);background:rgba(36,28,10,.4)}
+  .drop strong{color:var(--gold)}
+  .err{color:var(--crimson);font-size:13px;margin-top:14px;min-height:18px}
+  .hint{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:18px}
+  .hint code{color:var(--ink)}
+
+  @media (max-width:860px){
+    main{grid-template-columns:1fr;grid-template-rows:1fr auto}
+    .panel{border-left:none;border-top:1px solid var(--line);max-height:34vh}
+    .seat{width:118px}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay">
+  <div class="loader">
+    <h1>Hand Replayer</h1>
+    <p>Load a <code>parsed_hands.json</code> produced by the PokerNow parser to
+       step through every hand action by action.</p>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept=".json,application/json" hidden>
+      Drop the file here or <strong>browse</strong>
+    </label>
+    <div class="err" id="err"></div>
+    <div class="hint">Served from a folder containing the file? It loads
+      automatically. Otherwise run<br><code>python3 -m http.server</code> in that
+      folder and open <code>localhost:8000</code>.</div>
+  </div>
+</div>
+
+<header>
+  <span class="brand">Hand&nbsp;Replayer<span class="dot">.</span></span>
+  <div class="meta" id="meta"></div>
+  <span class="spacer"></span>
+  <span class="hand-jump" id="sessionWrap" style="display:none">session
+    <select id="sessionSelect"></select>
+  </span>
+  <span class="hand-jump">go to hand
+    <input type="number" id="handInput" min="1" value="1">
+  </span>
+  <span class="hand-jump" id="reviewWrap" style="display:none">show
+    <select id="reviewFilter">
+      <option value="all">all hands</option>
+      <option value="needs">needs review</option>
+      <option value="flagged">flagged &#9888;</option>
+      <option value="reviewed">reviewed &#10003;</option>
+      <option value="unreviewed">not reviewed</option>
+      <option value="noted">with notes &#9998;</option>
+    </select>
+    <span class="rev-count" id="reviewCount"></span>
+  </span>
+  <span class="nav"><a href="stats.html">&#8596; Stats</a></span>
+</header>
+
+<div class="range-panel collapsed" id="rangePanel" style="display:none">
+  <div class="rp-bar" id="rpBar">
+    <span class="rp-title">&#9824; Preflop range</span>
+    <span class="rp-ctx" id="rpCtx"></span>
+    <span class="rp-toggle" id="rpToggle">show &#9662;</span>
+  </div>
+  <div class="rp-body">
+    <div>
+      <div class="rp-controls">
+        <select id="rpPos" title="position"></select>
+        <select id="rpDepth" title="stack depth">
+          <option value="low">≤20bb</option><option value="medium">20–50bb</option>
+          <option value="deep">50–150bb</option><option value="ultra">150bb+</option>
+        </select>
+        <span class="rp-seg" id="rpView">
+          <button data-v="rfi" class="on">Open (RFI)</button>
+          <button data-v="vs">vs raise</button>
+        </span>
+        <select id="rpRaiser" title="raiser position" style="display:none">
+          <option value="early">vs EP/MP open</option><option value="late">vs CO/BTN/SB open</option>
+        </select>
+      </div>
+      <div class="grid13" id="rpGrid"></div>
+    </div>
+    <div class="rp-side">
+      <div class="rp-herohand" id="rpHeroHand"></div>
+      <div class="rp-legend" id="rpLegend"></div>
+      <div class="rp-note" id="rpNote"></div>
+    </div>
+  </div>
+</div>
+
+<main>
+  <div class="empty-filter" id="emptyFilter"></div>
+  <div class="stage-wrap">
+    <div class="table" id="table">
+      <div class="center">
+        <div class="pot"><span class="plabel">Pot</span><span id="potVal">0</span></div>
+        <div class="board" id="board1"></div>
+        <div class="board run2" id="board2"></div>
+      </div>
+      <!-- seats + dealer button injected -->
+    </div>
+  </div>
+
+  <aside class="panel">
+    <h2>Now</h2>
+    <div class="now">
+      <div class="line" id="nowLine">—</div>
+      <div class="street" id="nowStreet"></div>
+    </div>
+    <div class="gto-note" id="gtoNote" style="display:none"></div>
+    <div class="dev-context" id="devContext" style="display:none"></div>
+    <div class="note-box" id="noteBox">
+      <label for="noteInput">&#9998; Review note <span class="note-saved" id="noteSaved">saved</span></label>
+      <input type="text" id="noteInput" maxlength="160" autocomplete="off"
+        placeholder="What was the leak? What will you do differently?">
+    </div>
+    <h2>Hand log</h2>
+    <div class="log" id="log"></div>
+  </aside>
+</main>
+
+<footer>
+  <div class="progress">
+    <div class="bar"><div class="fill" id="fill"></div></div>
+    <div class="lbl" id="progLbl"></div>
+  </div>
+  <button class="ctrl" id="prevHand" title="Previous hand">⏮ Hand</button>
+  <button class="ctrl" id="prevAct" title="Previous action (←)">◀ Prev</button>
+  <button class="ctrl play" id="play" title="Play / pause (space)">▶ Play</button>
+  <button class="ctrl" id="nextAct" title="Next action (→)">Next ▶</button>
+  <button class="ctrl" id="nextHand" title="Next hand">Hand ⏭</button>
+</footer>
+
+<script src="hub.js"></script>
+<script src="gto.js"></script>
+<script>
+"use strict";
+const SUIT={c:"\u2663",d:"\u2666",h:"\u2665",s:"\u2660"};
+const RED=new Set(["d","h"]);
+const PLAY_MS=5000;
+
+let ALLHANDS=[];        // every hand across all sessions
+let SESSIONS=[];        // [{key,label,date,hands}]
+let curSession=0;
+let HANDS=[];           // hands of the active session
+let hi=0;               // current hand index (within active session)
+let frames=[];          // frames for current hand
+let fi=0;               // current frame index
+let timer=null;
+
+/* ---------- review tracking ---------- */
+const LS="rev_";
+const store={
+  get(k,d){try{const v=localStorage.getItem(LS+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem(LS+k,JSON.stringify(v));}catch(e){}}
+};
+let REVIEWED=store.get("reviewed",{});   // handKey -> true
+let NOTES=store.get("notes",{});         // handKey -> string
+let FILTER="all";
+function handKey(h){return (h.file||h.game_id||h.gameId||"session")+"#"+h.number;}
+function hasNote(h){const n=NOTES[handKey(h)];return !!(n&&n.trim());}
+// A hand "needs review" when the hero made a preflop chart deviation, or got
+// all-in as the underdog (sub-50% equity) — the two signals worth studying.
+function reviewFlags(h){
+  const reasons=[];
+  if(h.variant==="plo") return reasons;   // Hold'em deviation/equity logic n/a to Omaha
+  const hero=(h.players||[]).find(p=>p.is_hero);
+  if(!hero) return reasons;
+  if(typeof GTO!=="undefined"){
+    let v=null; try{v=GTO.evalPreflop(h,hero.seat);}catch(e){}
+    if(v && v.situation!=="offchart" && v.match===false){
+      const did=({raise:"raised",call:"called",fold:"folded",check:"checked"})[v.actual]||v.actual;
+      reasons.push("preflop: you "+did+", chart says "+v.recLabel);
+    }
+  }
+  if(h.allin && h.allin.seats && h.allin.seats.includes(hero.seat) && h.allin.eq_lock){
+    const e=h.allin.eq_lock[String(hero.seat)];
+    if(e!=null && e<50) reasons.push("all-in as underdog ("+(Math.round(e*10)/10)+"% equity)");
+  }
+  return reasons;
+}
+function flagsOf(h){return h._review||[];}
+function isReviewed(h){return !!REVIEWED[handKey(h)];}
+function passesFilter(h){
+  const flagged=flagsOf(h).length>0, reviewed=isReviewed(h);
+  switch(FILTER){
+    case "needs": return flagged && !reviewed;
+    case "flagged": return flagged;
+    case "reviewed": return reviewed;
+    case "unreviewed": return !reviewed;
+    case "noted": return hasNote(h);
+    default: return true;
+  }
+}
+function setSession(s){
+  curSession=s; HANDS=SESSIONS[s].hands;
+  document.getElementById("sessionSelect").value=String(s);
+  document.getElementById("handInput").max=HANDS.length;
+}
+function gotoFirstMatchGlobal(){
+  for(let s=0;s<SESSIONS.length;s++){
+    const idx=SESSIONS[s].hands.findIndex(passesFilter);
+    if(idx>=0){ setSession(s); loadHand(idx); return true; }
+  }
+  return false;
+}
+function updateReviewCount(){
+  let flagged=0,reviewed=0,needs=0,noted=0;
+  ALLHANDS.forEach(h=>{const f=flagsOf(h).length>0,r=isReviewed(h);
+    if(f)flagged++; if(r)reviewed++; if(f&&!r)needs++; if(hasNote(h))noted++;});
+  document.getElementById("reviewCount").innerHTML=
+    `<span class="need">&#9888; ${needs} need review</span> · `+
+    `<span class="done">&#10003; ${reviewed} reviewed</span> · `+
+    `&#9998; ${noted} noted · ${flagged} flagged`;
+}
+function toggleReviewed(h){
+  const k=handKey(h);
+  if(REVIEWED[k]) delete REVIEWED[k]; else REVIEWED[k]=true;
+  store.set("reviewed",REVIEWED);
+  renderMeta(h); updateReviewCount(); render();
+}
+function applyFilter(){
+  FILTER=document.getElementById("reviewFilter").value;
+  const note=document.getElementById("emptyFilter");
+  if(passesFilter(HANDS[hi])){ note.style.display="none"; }
+  else if(gotoFirstMatchGlobal()){ note.style.display="none"; }
+  else { note.style.display="block";
+    note.textContent="No hands match \u201c"+document.getElementById("reviewFilter").selectedOptions[0].text+"\u201d.";
+  }
+  updateReviewCount(); render();
+}
+
+/* ---------- loading ---------- */
+function normalize(data){
+  let hands;
+  if(Array.isArray(data)) hands=data;
+  else if(data && Array.isArray(data.hands)) hands=data.hands;
+  else throw new Error("Unrecognised file — expected a parsed_hands.json with a 'hands' array.");
+  if(!hands.length) throw new Error("No hands found in file.");
+  // light validation
+  if(!hands[0].players || !hands[0].event_types)
+    throw new Error("These don't look like parsed hands (missing players/event_types).");
+  return hands;
+}
+// Canonical display names (same mapping as the stats page). Applied to all
+// name fields on load so the replayer shows real names. Keyed by display name.
+const NAMEMAP={"Fake Madrid":"Arsh","PS":"Pranav","ady":"Aadhar"};
+function remapNames(hands){
+  const fix=n=>NAMEMAP[n]||n;
+  hands.forEach(h=>{
+    (h.players||[]).forEach(p=>{p.name=fix(p.name);});
+    (h.actions||[]).forEach(a=>{a.name=fix(a.name);});
+    (h.shows||[]).forEach(s=>{s.name=fix(s.name);});
+    (h.awards||[]).forEach(a=>{a.name=fix(a.name);});
+    (h.uncalled_returns||[]).forEach(u=>{u.name=fix(u.name);});
+  });
+}
+function start(data){
+  ALLHANDS=normalize(data);
+  remapNames(ALLHANDS);
+  ALLHANDS.forEach(h=>{h._review=reviewFlags(h);});   // precompute review flags (GTO is loaded)
+  document.getElementById("overlay").style.display="none";
+  buildSessions();
+  document.getElementById("reviewWrap").style.display="flex";
+  updateReviewCount();
+  selectSession(0);
+}
+
+function fmtSessionDate(ms){
+  if(!ms || isNaN(ms)) return "unknown date";
+  const d=new Date(ms);
+  return d.toLocaleString(undefined,
+    {day:"numeric",month:"short",year:"numeric",hour:"numeric",minute:"2-digit"});
+}
+function buildSessions(){
+  const groups=new Map();   // key -> hands[] (preserve first-seen order)
+  for(const h of ALLHANDS){
+    const key=h.file || h.game_id || h.gameId || "session";
+    if(!groups.has(key)) groups.set(key,[]);
+    groups.get(key).push(h);
+  }
+  SESSIONS=[...groups.entries()].map(([key,hands])=>{
+    const starts=hands.map(h=>h.started_at).filter(Boolean);
+    const startedAt=starts.length?Math.min(...starts):null;
+    return {key, hands, startedAt, date:fmtSessionDate(startedAt)};
+  });
+  // order sessions chronologically by start time
+  SESSIONS.sort((a,b)=>(a.startedAt||0)-(b.startedAt||0));
+
+  const sel=document.getElementById("sessionSelect");
+  sel.innerHTML=SESSIONS.map((s,i)=>
+    `<option value="${i}">Session ${i+1} — ${s.date} (${s.hands.length} hands)</option>`).join("");
+  document.getElementById("sessionWrap").style.display=SESSIONS.length>1?"flex":"none";
+}
+function selectSession(i){
+  stop();
+  curSession=Math.max(0,Math.min(SESSIONS.length-1,i));
+  HANDS=SESSIONS[curSession].hands;
+  document.getElementById("sessionSelect").value=String(curSession);
+  document.getElementById("handInput").max=HANDS.length;
+  const idx=HANDS.findIndex(passesFilter);
+  loadHand(idx>=0?idx:0);
+}
+document.getElementById("sessionSelect").addEventListener("change",e=>{
+  selectSession(parseInt(e.target.value,10));
+});
+function fail(msg){ document.getElementById("err").textContent=msg; }
+
+(function autoload(){
+  HUB.load().then(({data})=>start(data)).catch(()=>{/* show loader */});
+})();
+
+const fileInput=document.getElementById("file");
+const drop=document.getElementById("drop");
+fileInput.addEventListener("change",e=>{
+  const f=e.target.files[0]; if(f) readFile(f);
+});
+["dragover","dragenter"].forEach(ev=>drop.addEventListener(ev,e=>{
+  e.preventDefault();drop.classList.add("over");}));
+["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{
+  e.preventDefault();drop.classList.remove("over");}));
+drop.addEventListener("drop",e=>{
+  const f=e.dataTransfer.files[0]; if(f) readFile(f);
+});
+function readFile(f){
+  const r=new FileReader();
+  r.onload=()=>{ try{ start(JSON.parse(r.result)); }catch(err){ fail(err.message);} };
+  r.onerror=()=>fail("Could not read that file.");
+  r.readAsText(f);
+}
+
+/* ---------- card helpers ---------- */
+function cardFace(card,mini){
+  if(card==null) return `<div class="card back${mini?' mini':''}"></div>`;
+  const r=card.slice(0,-1)==="T"?"10":card.slice(0,-1);
+  const s=card.slice(-1);
+  return `<div class="card face${mini?' mini':''} ${RED.has(s)?'red':''}">
+    <span class="r">${r}</span><span class="s">${SUIT[s]}</span></div>`;
+}
+function cardText(card){
+  if(card==null) return "??";
+  const r=card.slice(0,-1)==="T"?"10":card.slice(0,-1);
+  return r+SUIT[card.slice(-1)];
+}
+function cardsText(arr){ return arr.map(cardText).join(" "); }
+
+/* ---------- frame construction (replays structured events) ---------- */
+function buildFrames(hand){
+  const startStack={}; hand.players.forEach(p=>startStack[p.seat]=p.stack);
+  const heroSeat=hand.hero_seat;
+  const heroP=hand.players.find(p=>p.seat===heroSeat);
+  const A=[...hand.actions],B=[...hand.boards],S=[...hand.shows],
+        U=[...hand.uncalled_returns],W=[...hand.awards];
+
+  let stacks={...startStack}, streetCommit={}, pot=0, folded={}, revealed={},
+      board1=[], board2=[], street="preflop";
+  // reveal every known hand up front — the exporter's hole cards are in the
+  // data even when the exporter isn't the hero (old Trish-perspective logs)
+  hand.players.forEach(p=>{ if(p.hole_cards) revealed[p.seat]=p.hole_cards.slice(); });
+
+  const out=[];
+  const snap=(kind,label,actor,verb)=>out.push({
+    kind,label,actor:actor??null,verb:verb||kind,street,
+    stacks:{...stacks},streetCommit:{...streetCommit},pot,
+    folded:{...folded},revealed:JSON.parse(JSON.stringify(revealed)),
+    board1:[...board1],board2:[...board2]
+  });
+
+  snap("start",`Hand #${hand.number} — hole cards dealt`,null,"board");
+
+  const wager=a=>{
+    const prev=streetCommit[a.seat]||0, lvl=a.amount||0;
+    const d=Math.max(0,lvl-prev);
+    streetCommit[a.seat]=Math.max(prev,lvl); pot+=d; stacks[a.seat]-=d;
+  };
+  const verbOf=a=>({check:"call",fold:"fold",call:"call",bet:"bet",raise:"raise",
+    post_small_blind:"call",post_big_blind:"call",
+    post_missed_big_blind:"call",post_missing_small_blind:"call"}[a.action]||"call");
+  const actLabel=a=>{
+    const ai=a.all_in?" — all in":"";
+    switch(a.action){
+      case "check":return `${a.name} checks`;
+      case "fold":return `${a.name} folds`;
+      case "post_small_blind":return `${a.name} posts small blind ${a.amount}`;
+      case "post_big_blind":return `${a.name} posts big blind ${a.amount}`;
+      case "post_missing_small_blind":return `${a.name} posts missing small blind ${a.amount}`;
+      case "post_missed_big_blind":return `${a.name} posts missed big blind ${a.amount}`;
+      case "call":return `${a.name} calls ${a.amount}${ai}`;
+      case "bet":return `${a.name} bets ${a.amount}${ai}`;
+      case "raise":return `${a.name} raises to ${a.amount}${ai}`;
+    }
+    return a.name;
+  };
+  const NAMES={flop:"Flop",turn:"Turn",river:"River"};
+
+  for(const t of hand.event_types){
+    if([0,2,3,4,5,7,8,11].includes(t)){
+      const a=A.shift(); if(!a) continue;
+      if(a.action==="check"){/*nothing*/}
+      else if(a.action==="fold"){folded[a.seat]=true;}
+      else if(a.action==="post_missing_small_blind"){ // dead blind → pot, no commit
+        pot+=a.amount||0; stacks[a.seat]-=(a.amount||0);
+      }
+      else wager(a);   // blinds, missed BB, calls, bets, raises
+      const kind=a.action==="fold"?"fold":
+        (a.action.startsWith("post")?"blind":"action");
+      snap(kind,actLabel(a),a.seat,verbOf(a));
+    }else if(t===9){
+      const b=B.shift(); if(!b) continue;
+      street=b.street; streetCommit={};
+      if(b.run>=2) board2=b.full_board.slice(); else board1=b.full_board.slice();
+      snap("board",`${NAMES[b.street]}${b.run>=2?" (run 2)":""}: ${b.cards.map(cardText).join(" ")}`,null,"board");
+    }else if(t===12){
+      const s=S.shift(); if(!s) continue;
+      revealed[s.seat]=s.raw_cards.slice();
+      snap("show",`${s.name} shows ${cardsText(s.raw_cards.filter(c=>c!=null))}`,s.seat,"board");
+    }else if(t===16){
+      const u=U.shift(); if(!u) continue;
+      stacks[u.seat]+=u.amount; pot=Math.max(0,pot-u.amount);
+      streetCommit[u.seat]=Math.max(0,(streetCommit[u.seat]||0)-u.amount);
+      snap("uncalled",`Uncalled ${u.amount} returned to ${u.name}`,u.seat,"call");
+    }else if(t===10){
+      const w=W.shift(); if(!w) continue;
+      stacks[w.seat]+=w.amount; pot=Math.max(0,pot-w.amount);
+      const desc=(w.is_showdown&&w.hand_description)?` with ${w.hand_description}`:"";
+      const run=(w.run&&w.run>=2)?" (run 2)":"";
+      snap("award",`${w.name} wins ${w.amount}${desc}${run}`,w.seat,"win");
+    }
+    // 14 (run-it-twice vote) & 15 (showdown marker) → no frame
+  }
+  return out;
+}
+
+/* ---------- seat geometry: hero at bottom, others around the oval ---------- */
+function seatPositions(hand){
+  const ps=[...hand.players].sort((a,b)=>a.seat-b.seat);
+  const n=ps.length;
+  let heroIdx=ps.findIndex(p=>p.seat===hand.hero_seat);
+  if(heroIdx<0) heroIdx=0;
+  const order=[...ps.slice(heroIdx),...ps.slice(0,heroIdx)]; // hero first
+  const pos={};
+  order.forEach((p,k)=>{
+    const ang=(90+k*360/n)*Math.PI/180;     // k=0 → bottom centre
+    pos[p.seat]={
+      x:50+39*Math.cos(ang),
+      y:50+42*Math.sin(ang)
+    };
+  });
+  return pos;
+}
+
+/* ---------- render ---------- */
+function loadHand(idx){
+  hi=Math.max(0,Math.min(HANDS.length-1,idx));
+  const hand=HANDS[hi];
+  frames=buildFrames(hand);
+  fi=0;
+  buildTable(hand);
+  document.getElementById("handInput").value=hand.number;
+  renderMeta(hand);
+  renderGtoNote(hand);
+  renderDevContext(hand);
+  renderNote(hand);
+  syncRange(hand);
+  // frame at which the all-in is locked = last betting action by a contestant
+  // (the call of the shove, or an all-in re-raise). Equity is hidden before this.
+  allinLockFrame = Infinity;
+  if(hand.allin){
+    for(let i=0;i<frames.length;i++){
+      const fr=frames[i];
+      if(fr.kind==="action" && hand.allin.seats.includes(fr.actor)) allinLockFrame=i;
+    }
+  }
+  render();
+}
+let allinLockFrame=Infinity;
+
+function renderGtoNote(hand){
+  const box=document.getElementById("gtoNote");
+  if(typeof GTO==="undefined"){box.style.display="none";return;}
+  if(hand.variant==="plo"){
+    box.style.display="";
+    box.innerHTML=`<b>Omaha hand</b> <span class="muted">· Hold'em preflop chart and all-in equity don't apply here</span>`;
+    return;
+  }
+  const hero=hand.players.find(p=>p.is_hero);
+  let v=null;
+  try{ v=hero?GTO.evalPreflop(hand,hero.seat):null; }catch(e){ v=null; }
+  if(!v){box.style.display="none";return;}
+  box.style.display="";
+  const head=`<b>Preflop GTO</b> <span class="muted">· ${v.pos} · ${v.depthLabel}</span><br>`;
+  if(v.situation==="offchart"){
+    box.innerHTML=head+`<span class="muted">off-chart (${v.reason}) — no reference line</span>`;
+    return;
+  }
+  const did=({raise:"raised",call:"called",fold:"folded",check:"checked"})[v.actual]||v.actual;
+  const verdict=v.match?`<span class="ok">✓ matches</span>`:`<span class="bad">✗ deviation</span>`;
+  box.innerHTML=head+
+    `chart: <b>${v.recLabel}</b> <span class="muted">(${v.situation==="vs-open"?"vs "+v.vsPos+" open":"open"})</span><br>`+
+    `you ${did} — ${verdict}`;
+}
+
+/* ---------- deviation context (5 hands before) ---------- */
+function invSeat(h,seat){const by={};let dead=0;(h.actions||[]).forEach(a=>{if(a.seat!==seat||a.amount==null)return;
+  if(a.action==="post_missing_small_blind"){dead+=a.amount;return;}   // dead blind: additive, not part of live commit
+  by[a.street]=Math.max(by[a.street]||0,a.amount);});return Object.values(by).reduce((x,y)=>x+y,0)+dead;}
+function netSeat(h,seat){
+  const aw=(h.awards||[]).filter(w=>w.seat===seat).reduce((s,w)=>s+(w.amount||0),0);
+  const uc=(h.uncalled_returns||[]).filter(u=>u.seat===seat).reduce((s,u)=>s+(u.amount||0),0);
+  return aw+uc-invSeat(h,seat);
+}
+function vpipSeat(h,seat){return (h.actions||[]).some(a=>a.street==="preflop"&&a.seat===seat&&(a.action==="raise"||a.action==="call"));}
+const BIG_LOSS=-250; // 25bb at 5/10
+function buildContext(idx){
+  const prior=HANDS.slice(Math.max(0,idx-5),idx);
+  let played=0,worst=0,badbeat=false,streak=0;
+  const list=prior.map(p=>{
+    const hp=heroOf(p); const dealt=!!hp;
+    const seat=dealt?hp.seat:null;
+    const vp=dealt&&vpipSeat(p,seat);
+    const net=dealt?netSeat(p,seat):0;
+    if(vp)played++; if(net<worst)worst=net;
+    let mark="";
+    if(dealt&&p.allin&&p.allin.seats&&p.allin.seats.includes(seat)){
+      const e=p.allin.eq_lock?p.allin.eq_lock[String(seat)]:null;
+      const lost=p.allin.winners&&!p.allin.winners.includes(seat);
+      if(e!=null&&e>=55&&lost){badbeat=true;mark="bad beat";}
+      else mark="all-in";
+    }
+    return {num:p.number, dealt, vp, net, mark};
+  });
+  for(let j=list.length-1;j>=0;j--){ if(!list[j].vp)streak++; else break; }
+  let cause,label,cls;
+  if(badbeat){cause="badbeat";label="post bad-beat";cls="tilt";}
+  else if(worst<=BIG_LOSS){cause="bigloss";label="post big-loss";cls="tilt";}
+  else if(streak>=4||played===0){cause="carddead";label="card-dead / impatience";cls="carddead";}
+  else if(played<=1){cause="lowaction";label="low action";cls="carddead";}
+  else {cause="flow";label="in the flow — no trigger";cls="flow";}
+  return {list,played,worst,streak,badbeat,cause,label,cls};
+}
+function heroOf(h){return (h.players||[]).find(p=>p.is_hero);}
+
+let noteSaveTimer=null;
+function renderNote(hand){
+  const inp=document.getElementById("noteInput");
+  inp.value=NOTES[handKey(hand)]||"";
+  inp.dataset.key=handKey(hand);
+}
+function wireNoteInput(){
+  const inp=document.getElementById("noteInput");
+  const saved=document.getElementById("noteSaved");
+  inp.addEventListener("input",()=>{
+    const key=inp.dataset.key; if(!key)return;
+    const val=inp.value.trim();
+    if(val) NOTES[key]=inp.value; else delete NOTES[key];
+    store.set("notes",NOTES);
+    updateReviewCount();
+    if(HANDS[hi]) renderMeta(HANDS[hi]);   // refresh the meta pencil indicator
+    clearTimeout(noteSaveTimer);
+    saved.classList.add("show");
+    noteSaveTimer=setTimeout(()=>saved.classList.remove("show"),1200);
+  });
+}
+
+/* ---------- preflop range panel ---------- */
+const RR="AKQJT98765432";
+const rState={pos:"BTN",depth:"deep",view:"rfi",raiser:"late",heroToken:null};
+function tokenAt(i,j){
+  if(i===j) return RR[i]+RR[i];
+  return i<j ? RR[i]+RR[j]+"s" : RR[j]+RR[i]+"o";
+}
+function rangeSetMap(){
+  if(typeof GTO==="undefined") return {map:{},kind:"rfi"};
+  const d=rState.depth,p=rState.pos,map={};
+  if(rState.view==="rfi"){
+    const tbl=GTO.RFI[d][p];
+    if(tbl){ const o=GTO._expand(tbl); for(const t in o) map[t]="open"; }
+    return {map,kind:"rfi",noOpen:!tbl};
+  }
+  const cell=GTO.DEF[d][rState.raiser];
+  const call=GTO._expand(cell.call), tb=GTO._expand(cell.tb);
+  if(p==="BB"){ const ex=GTO._expand(GTO.BB_EXTRA[d]); for(const k in ex) call[k]=1; }
+  for(const t in call) map[t]="call";
+  for(const t in tb) map[t]="tbet";   // 3-bet overrides call
+  return {map,kind:"vs"};
+}
+function renderRange(){
+  const grid=document.getElementById("rpGrid");
+  const {map,kind,noOpen}=rangeSetMap();
+  let html="";
+  for(let i=0;i<13;i++)for(let j=0;j<13;j++){
+    const t=tokenAt(i,j);
+    const cls=map[t]||"fold";
+    const hero=rState.heroToken===t?" hero":"";
+    const pair=i===j?" pair":"";
+    html+=`<div class="gc ${cls}${pair}${hero}" title="${t}">${t.replace(/[so]$/,m=>m)}</div>`;
+  }
+  grid.innerHTML=html;
+  // legend
+  const leg=document.getElementById("rpLegend");
+  leg.innerHTML = kind==="rfi"
+    ? `<span><i style="background:#7a5a1e"></i>open</span><span><i style="background:#0e1f19;border:1px solid #2a3a34"></i>fold</span>`
+    : `<span><i style="background:#8a3b2f"></i>3-bet</span><span><i style="background:#2c5a47"></i>call</span><span><i style="background:#0e1f19;border:1px solid #2a3a34"></i>fold</span>`;
+  // hero hand line
+  const hh=document.getElementById("rpHeroHand");
+  if(rState.heroToken){
+    const a=map[rState.heroToken];
+    const verdict = a==="open"?"in your open range":a==="tbet"?"a 3-bet":a==="call"?"a call":"a fold";
+    hh.innerHTML=`Your hand: <b>${rState.heroToken}</b> — ${verdict}`;
+  } else hh.innerHTML="";
+  // note
+  const note=document.getElementById("rpNote");
+  const size = (kind==="rfi" && !noOpen) ? ` Open ≈ <b>${GTO.OPEN_SIZE[rState.depth]}</b>.` : "";
+  const bbMsg = (kind==="rfi" && noOpen) ? ` <b>${rState.pos} has no opening range</b> — it never opens first in; switch to "vs raise" to see its defense.` : "";
+  note.innerHTML =
+    `Reference range for <b>${rState.pos}</b>, <b>${GTO.DEPTH_LABEL[rState.depth]}</b>.${size}${bbMsg}`+
+    ` Table size enters through position, not as a separate axis. Against your loose-passive game the read-based`+
+    ` adjustment is to open <b>tighter</b> from EP and <b>wider for value</b> in late position — treat this as a`+
+    ` guardrail, not gospel.`;
+}
+function syncRange(hand){
+  const panel=document.getElementById("rangePanel");
+  if(typeof GTO==="undefined"){ panel.style.display="none"; return; }
+  const hero=heroOf(hand);
+  const ctx=document.getElementById("rpCtx");
+  if(hand.variant==="plo"){
+    rState.heroToken=null;
+    ctx.innerHTML=`<span class="k">Omaha hand — Hold'em opening ranges don't apply</span>`;
+    renderRange();
+    return;
+  }
+  if(hero){
+    const pos=GTO.positions(hand)[hero.seat];
+    const bb=hand.big_blind||1;
+    const depth=GTO.depthBucket((hero.stack||0)/bb);
+    rState.pos = ["EP/MP","CO","BTN","SB","BB"].includes(pos)?pos:"EP/MP";
+    rState.depth = depth;
+    const hc=hero.hole_cards;
+    rState.heroToken = (hc&&hc.length===2&&hc.indexOf(null)<0)?GTO.handToken(hc[0],hc[1]):null;
+    document.getElementById("rpPos").value=rState.pos;
+    document.getElementById("rpDepth").value=rState.depth;
+    ctx.innerHTML=`<span class="k">table</span> <b>${hand.players.length}-handed</b> · `+
+      `<span class="k">you</span> <b>${pos}</b> · <span class="k">stack</span> `+
+      `<b>${Math.round((hero.stack||0)/bb)}bb</b> <span class="k">(${GTO.DEPTH_LABEL[depth]})</span>`;
+  } else {
+    rState.heroToken=null;
+    ctx.innerHTML=`<span class="k">you weren't dealt in this hand — showing ${rState.pos} reference</span>`;
+  }
+  renderRange();
+}
+function wireRangePanel(){
+  if(typeof GTO==="undefined") return;
+  const panel=document.getElementById("rangePanel");
+  panel.style.display=""; panel.classList.remove("collapsed");
+  document.getElementById("rpToggle").textContent="hide \u25B4";
+  const pos=document.getElementById("rpPos");
+  pos.innerHTML=["EP/MP","CO","BTN","SB","BB"].map(p=>`<option value="${p}">${p}</option>`).join("");
+  document.getElementById("rpBar").addEventListener("click",e=>{
+    const c=panel.classList.toggle("collapsed");
+    document.getElementById("rpToggle").textContent=c?"show \u25BC":"hide \u25B4";
+  });
+  pos.addEventListener("change",e=>{rState.pos=e.target.value;renderRange();});
+  document.getElementById("rpDepth").addEventListener("change",e=>{rState.depth=e.target.value;renderRange();});
+  document.getElementById("rpRaiser").addEventListener("change",e=>{rState.raiser=e.target.value;renderRange();});
+  document.querySelectorAll("#rpView button").forEach(b=>b.addEventListener("click",()=>{
+    rState.view=b.dataset.v;
+    document.querySelectorAll("#rpView button").forEach(x=>x.classList.toggle("on",x===b));
+    document.getElementById("rpRaiser").style.display = rState.view==="vs"?"":"none";
+    renderRange();
+  }));
+}
+function renderDevContext(hand){
+  const box=document.getElementById("devContext");
+  const isDev=flagsOf(hand).some(r=>r.indexOf("preflop")===0);
+  if(!isDev){box.style.display="none";return;}
+  const c=buildContext(hi);
+  box.style.display="";
+  const summary = c.cause==="flow"
+    ? `No recent trigger — you played <b>${c.played}</b> of the last ${c.list.length} and weren't stuck. This open is <b>baseline looseness</b>, not a reaction.`
+    : c.cause==="bigloss"
+    ? `You lost <b>${c.worst}</b> in the last ${c.list.length} hands. This looks like a <b>revenge open</b> after a big pot.`
+    : c.cause==="badbeat"
+    ? `You lost an all-in as favourite in the last ${c.list.length} hands. Classic <b>bad-beat tilt</b> window.`
+    : c.cause==="carddead"
+    ? `You folded <b>${c.streak}</b> in a row going in. Looks like an <b>impatience</b> open after a card-dead stretch.`
+    : `Only <b>${c.played}</b> hand played in the last ${c.list.length} — <b>low action</b> may be nudging you to open light.`;
+  const rows=c.list.map(p=>{
+    const res = !p.dealt ? `<span class="res flat">sat out</span>`
+      : p.net>0 ? `<span class="res win">+${p.net}</span>`
+      : p.net<0 ? `<span class="res loss">${p.net}</span>`
+      : `<span class="res flat">0</span>`;
+    const act = !p.dealt ? "—" : (p.vp?"played":"folded");
+    const tag = p.mark?`<span class="tag">${p.mark}</span>`:"";
+    return `<li><span class="lbl">#${p.num} · ${act}</span>${tag}${res}</li>`;
+  }).join("");
+  box.innerHTML=
+    `<div class="dh">Deviation context<span class="cause ${c.cls}">${c.label}</span></div>`+
+    `<div class="summary">${summary}</div>`+
+    (rows?`<ul class="prior">${rows}</ul>`:"")+
+    `<div class="foot">Prior ${c.list.length} hands (this session). "Bad beat" = you lost an all-in while favourite.</div>`;
+}
+
+function renderMeta(hand){
+  const bb=`${hand.small_blind}/${hand.big_blind}`;
+  const sess=SESSIONS[curSession];
+  const sessLbl=sess?`<span><span class="k">session</span><b>${sess.date}</b></span>`:"";
+  const reasons=flagsOf(hand);
+  const reviewed=isReviewed(hand);
+  const caution=reasons.length
+    ? `<span class="caution" title="${escapeHtml(reasons.join(" · "))}">&#9888; needs review</span>` : "";
+  const noteMark=hasNote(hand)?`<span class="caution" style="color:var(--bone);border-color:var(--line)" title="${escapeHtml(NOTES[handKey(hand)])}">&#9998; note</span>`:"";
+  const toggle=`<button class="rev-toggle ${reviewed?"on":""}" id="revToggle">`+
+    `${reviewed?"&#10003; reviewed":"&#9711; mark reviewed"}</button>`;
+  document.getElementById("meta").innerHTML=
+    `<span><span class="k">hand</span><b>#${hand.number}</b> of ${HANDS.length}</span>`+
+    sessLbl+
+    `<span><span class="k">blinds</span><b>${bb}</b></span>`+
+    `<span><span class="k">players</span><b>${hand.players.length}</b></span>`+
+    (hand.run_it_twice?`<span><b style="color:var(--gold)">run it twice</b></span>`:"")+
+    (hand.dead_button?`<span><b style="color:var(--dim)">dead button</b></span>`:"")+
+    caution+noteMark+toggle;
+  const rt=document.getElementById("revToggle");
+  if(rt) rt.onclick=()=>toggleReviewed(hand);
+}
+
+let SEATS={};
+function buildTable(hand){
+  const table=document.getElementById("table");
+  // clear previous seats / button (keep .center)
+  [...table.querySelectorAll(".seat,.dealer-btn")].forEach(e=>e.remove());
+  SEATS=seatPositions(hand);
+  hand.players.forEach(p=>{
+    const pos=SEATS[p.seat];
+    const el=document.createElement("div");
+    el.className="seat"; el.dataset.seat=p.seat;
+    el.style.left=pos.x+"%"; el.style.top=pos.y+"%";
+    el.innerHTML=`
+      <div class="commit empty" data-commit></div>
+      <div class="holes" data-holes></div>
+      <div class="equity" data-equity style="display:none"></div>
+      <div class="pod">
+        <div class="badge" data-badge style="display:none"></div>
+        <div class="name">${p.name}</div>
+        <div class="stack" data-stack></div>
+      </div>`;
+    table.appendChild(el);
+  });
+  // dealer button near dealer seat, nudged toward table centre
+  const d=SEATS[hand.dealer_seat];
+  if(d){
+    const btn=document.createElement("div");
+    btn.className="dealer-btn"+(hand.dead_button?" dead":"");
+    btn.textContent="D"; btn.title=hand.dead_button?"dead button":"dealer";
+    btn.style.left=(d.x+(50-d.x)*0.18)+"%";
+    btn.style.top=(d.y+(50-d.y)*0.18)+"%";
+    document.getElementById("table").appendChild(btn);
+  }
+}
+
+function render(){
+  const hand=HANDS[hi];
+  const f=frames[fi];
+
+  // pot + board
+  document.getElementById("potVal").textContent=f.pot;
+  renderBoard("board1",f.board1);
+  renderBoard("board2",f.board2);
+
+  // seats
+  hand.players.forEach(p=>{
+    const seat=p.seat;
+    const el=document.querySelector(`.seat[data-seat="${seat}"]`);
+    el.classList.toggle("acting",f.actor===seat);
+    el.classList.toggle("folded",!!f.folded[seat]);
+
+    el.querySelector("[data-stack]").textContent=fmt(f.stacks[seat]);
+
+    // hole cards
+    const holes=el.querySelector("[data-holes]");
+    const cards=f.revealed[seat] || [null,null];
+    holes.innerHTML=cards.map(c=>cardFace(c,true)).join("");
+
+    // committed chips this street
+    const c=el.querySelector("[data-commit]");
+    const amt=f.streetCommit[seat]||0;
+    if(amt>0){c.classList.remove("empty");c.innerHTML=`<span class="chip"></span>${amt}`;}
+    else{c.classList.add("empty");c.innerHTML="";}
+
+    // badge: all-in / winner
+    const badge=el.querySelector("[data-badge]");
+    const isWinner=f.kind==="award"&&f.actor===seat;
+    if(isWinner){badge.style.display="";badge.className="badge win";badge.textContent="WIN";}
+    else if(!f.folded[seat]&&f.stacks[seat]===0&&fi>0){
+      badge.style.display="";badge.className="badge allin";badge.textContent="ALL IN";}
+    else badge.style.display="none";
+
+    // all-in equity (table-revealed cards only); shown once the all-in is
+    // CALLED (or re-raised all-in), and updated as the board runs out
+    const eqEl=el.querySelector("[data-equity]");
+    const ai=hand.allin;
+    if(ai && ai.seats.includes(seat) && !f.folded[seat] && fi>=allinLockFrame){
+      const L=(f.board1||[]).length;
+      const stage=ai.stages.find(s=>s.n===L) || ai.stages.filter(s=>s.n<=L).slice(-1)[0];
+      if(stage && (stage.n<5 || ai.num_runs===1)){
+        const e=stage.eq[String(seat)];
+        eqEl.style.display="";
+        eqEl.innerHTML = e.t>0
+          ? `${e.w}% <span class="tie">(${e.t}%)</span>`
+          : `${e.w}%`;
+      } else eqEl.style.display="none";
+    } else eqEl.style.display="none";
+  });
+
+  // now line
+  document.getElementById("nowLine").textContent=f.label;
+  document.getElementById("nowStreet").textContent=
+    f.kind==="start"?"":streetName(f.street);
+
+  // log up to current frame
+  renderLog();
+
+  // controls + progress
+  const last=frames.length-1;
+  document.getElementById("prevAct").disabled=(fi===0);
+  document.getElementById("nextAct").disabled=(fi===last);
+  document.getElementById("prevHand").disabled=!hasPrevMatch();
+  document.getElementById("nextHand").disabled=!hasNextMatch();
+  document.getElementById("fill").style.width=((fi/last)*100||0)+"%";
+  document.getElementById("progLbl").textContent=
+    `action ${fi} / ${last}`+(fi===last?"  · end of hand":"");
+}
+
+function renderBoard(id,cards){
+  const row=document.getElementById(id);
+  if(!cards.length){row.innerHTML="";row.style.display=id==="board2"?"none":"flex";return;}
+  row.style.display="flex";
+  const label=id==="board2"?`<span class="board-row-label">run 2</span>`:"";
+  row.innerHTML=label+cards.map(c=>`<span>${cardFace(c,false)}</span>`)
+    .map(h=>h.replace('class="card','class="card deal')).join("");
+}
+
+function renderLog(){
+  const log=document.getElementById("log");
+  let html="";
+  for(let i=1;i<frames.length;i++){
+    const f=frames[i];
+    const cls=i<fi?"past":(i===fi?"cur":"");
+    html+=`<div class="row ${cls}"><span class="verb-${f.verb}">${escapeHtml(f.label)}</span></div>`;
+  }
+  log.innerHTML=html;
+  const cur=log.querySelector(".row.cur");
+  if(cur) cur.scrollIntoView({block:"nearest"});
+}
+
+/* ---------- helpers ---------- */
+function fmt(n){return (n==null?"":n.toLocaleString());}
+function streetName(s){return ({preflop:"Pre-flop",flop:"Flop",turn:"Turn",river:"River"})[s]||s;}
+function escapeHtml(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+
+/* ---------- navigation ---------- */
+function nextAct(){ if(fi<frames.length-1){fi++;render();} else stop(); }
+function prevAct(){ if(fi>0){fi--;render();} }
+function nextHand(){
+  stop();
+  for(let j=hi+1;j<HANDS.length;j++){ if(passesFilter(HANDS[j])){ loadHand(j); return; } }
+  for(let s=curSession+1;s<SESSIONS.length;s++){
+    const idx=SESSIONS[s].hands.findIndex(passesFilter);
+    if(idx>=0){ setSession(s); loadHand(idx); return; }
+  }
+}
+function prevHand(){
+  stop();
+  for(let j=hi-1;j>=0;j--){ if(passesFilter(HANDS[j])){ loadHand(j); return; } }
+  for(let s=curSession-1;s>=0;s--){
+    const hs=SESSIONS[s].hands;
+    for(let j=hs.length-1;j>=0;j--){ if(passesFilter(hs[j])){ setSession(s); loadHand(j); return; } }
+  }
+}
+function hasNextMatch(){
+  for(let j=hi+1;j<HANDS.length;j++) if(passesFilter(HANDS[j])) return true;
+  for(let s=curSession+1;s<SESSIONS.length;s++) if(SESSIONS[s].hands.some(passesFilter)) return true;
+  return false;
+}
+function hasPrevMatch(){
+  for(let j=hi-1;j>=0;j--) if(passesFilter(HANDS[j])) return true;
+  for(let s=curSession-1;s>=0;s--) if(SESSIONS[s].hands.some(passesFilter)) return true;
+  return false;
+}
+function goLastHand(){ loadHand(HANDS.length-1); }
+function jumpHand(num){
+  const idx=HANDS.findIndex(h=>String(h.number)===String(num));
+  if(idx>=0){stop();loadHand(idx);}
+}
+
+/* ---------- play loop (5s between actions) ---------- */
+function play(){
+  if(timer){stop();return;}
+  if(fi>=frames.length-1) return;        // nothing to play
+  setPlayBtn(true);
+  const tick=()=>{
+    if(fi>=frames.length-1){stop();return;}
+    nextAct();
+    if(fi>=frames.length-1){stop();return;}
+    timer=setTimeout(tick,PLAY_MS);
+  };
+  timer=setTimeout(tick,PLAY_MS);
+}
+function stop(){ if(timer){clearTimeout(timer);timer=null;} setPlayBtn(false); }
+function setPlayBtn(on){
+  const b=document.getElementById("play");
+  b.textContent=on?"⏸ Pause":"▶ Play";
+}
+
+/* ---------- wire up ---------- */
+document.getElementById("nextAct").onclick=()=>{stop();nextAct();};
+document.getElementById("prevAct").onclick=()=>{stop();prevAct();};
+document.getElementById("nextHand").onclick=nextHand;
+document.getElementById("prevHand").onclick=prevHand;
+document.getElementById("play").onclick=play;
+document.getElementById("handInput").addEventListener("change",e=>jumpHand(e.target.value));
+document.getElementById("reviewFilter").addEventListener("change",applyFilter);
+wireNoteInput();
+wireRangePanel();
+
+document.addEventListener("keydown",e=>{
+  if(e.target.tagName==="INPUT") return;
+  if(e.key==="ArrowRight"){stop();nextAct();e.preventDefault();}
+  else if(e.key==="ArrowLeft"){stop();prevAct();e.preventDefault();}
+  else if(e.key==="ArrowDown"||e.key==="]"){nextHand();e.preventDefault();}
+  else if(e.key==="ArrowUp"||e.key==="["){prevHand();e.preventDefault();}
+  else if(e.key==="r"||e.key==="R"){toggleReviewed(HANDS[hi]);e.preventDefault();}
+  else if(e.key===" "){play();e.preventDefault();}
+});
+</script>
+</body>
+</html>

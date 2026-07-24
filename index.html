@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Up The Stakes — Table Hub</title>
+<style>
+  :root{
+    --table-deep:#0b211c; --felt:#15463a; --rail:#07140f;
+    --bone:#ece6d6; --ink:#cdd6d1; --dim:#5c706a; --line:#22433a; --panel:#0c241d;
+    --gold:#d9a441; --blue:#5b9bd1; --crimson:#c75a4a; --green:#6fbf8e;
+    --ui:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--ui);color:var(--ink);
+    background:
+      radial-gradient(120% 80% at 50% -10%, #123c31 0%, var(--table-deep) 55%, var(--rail) 120%);
+    background-attachment:fixed;min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:var(--gold)}
+  .wrap{max-width:880px;margin:0 auto;padding:30px 22px 90px}
+  header.top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px;
+    border-bottom:1px solid var(--line);padding-bottom:16px}
+  .brand{font-size:19px;font-weight:600;letter-spacing:.01em;color:var(--bone)}
+  .brand .dot{color:var(--gold)}
+  .brand small{display:block;font-family:var(--mono);font-size:11px;color:var(--dim);
+    letter-spacing:.06em;margin-top:4px;font-weight:400}
+  .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:16px;margin-top:34px}
+  .card{display:block;text-decoration:none;background:var(--panel);border:1px solid var(--line);
+    border-radius:12px;padding:20px 18px;transition:border-color .15s,transform .15s}
+  .card:hover{border-color:var(--gold);transform:translateY(-2px)}
+  .card h3{margin:0 0 6px;font-size:15px;color:var(--bone);font-weight:600}
+  .card p{margin:0;font-size:12.5px;color:var(--dim)}
+  .card .k{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--gold);display:block;margin-bottom:10px}
+  footer{margin-top:56px;font-family:var(--mono);font-size:11px;color:var(--dim)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="brand">Up The Stakes <span class="dot">·</span> Table Hub
+      <small>POKERNOW STUDY &amp; STATS — PICK A ROOM</small>
+    </div>
+  </header>
+
+  <div class="cards">
+    <a class="card" href="stats.html">
+      <span class="k">Dashboard</span>
+      <h3>Stats</h3>
+      <p>Session results, VPIP/PFR, positional splits and the money graph.</p>
+    </a>
+    <a class="card" href="extended-stats.html">
+      <span class="k">Deep dive</span>
+      <h3>Extended Stats</h3>
+      <p>Fold matrices, sizing tells, bluff anatomy and range library.</p>
+    </a>
+    <a class="card" href="replayer.html">
+      <span class="k">Film room</span>
+      <h3>Hand Replayer</h3>
+      <p>Step through any hand street by street, with all-in equities.</p>
+    </a>
+    <a class="card" href="trainer.html">
+      <span class="k">Practice</span>
+      <h3>Preflop Trainer</h3>
+      <p>Drill preflop spots against the charts.</p>
+    </a>
+    <a class="card" href="study.html">
+      <span class="k">Journal</span>
+      <h3>33-Day Study Log</h3>
+      <p>The study plan, day by day.</p>
+    </a>
+  </div>
+
+  <footer>data updates when a new build is published · pick who you are inside any room</footer>
+</div>
+</body>
+</html>

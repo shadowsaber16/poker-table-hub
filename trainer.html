@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preflop Trainer — Up The Stakes</title>
+<style>
+  :root{
+    --table-deep:#0b211c; --rail:#07140f; --panel:#0c241d;
+    --bone:#ece6d6; --ink:#cdd6d1; --dim:#5c706a; --line:#22433a;
+    --gold:#d9a441; --green:#6fbf8e; --crimson:#c75a4a; --blue:#5b9bd1;
+    --ui:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--ui);color:var(--ink);min-height:100vh;
+    background:radial-gradient(120% 80% at 50% -10%, #123c31 0%, var(--table-deep) 55%, var(--rail) 120%);
+    background-attachment:fixed;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:680px;margin:0 auto;padding:26px 20px 80px}
+  header{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;
+    border-bottom:1px solid var(--line);padding-bottom:14px}
+  .brand{font-size:18px;font-weight:600;color:var(--bone)} .brand .dot{color:var(--gold)}
+  .brand small{display:block;font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:3px;font-weight:400}
+  .nav a{font-size:12px;color:var(--dim);text-decoration:none;margin-left:14px} .nav a:hover{color:var(--gold)}
+
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin:16px 0}
+  .controls label{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--dim);display:flex;flex-direction:column;gap:4px}
+  .controls select{background:var(--panel);border:1px solid var(--line);color:var(--bone);
+    font-family:var(--mono);font-size:12px;padding:5px 8px;border-radius:7px}
+
+  /* scoreboard */
+  .score{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:6px 0 18px}
+  .score .s{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 12px;text-align:center}
+  .score .s .v{font-family:var(--mono);font-size:22px;font-weight:700;color:var(--bone);line-height:1}
+  .score .s .v small{font-size:12px;color:var(--dim)}
+  .score .s .t{font-family:var(--mono);font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-top:6px}
+  .score .s.goal .v{color:var(--gold)}
+  .goalbar{height:7px;background:#0e1f19;border:1px solid var(--line);border-radius:99px;overflow:hidden;margin:-8px 0 18px}
+  .goalbar i{display:block;height:100%;background:linear-gradient(90deg,var(--green),var(--gold));width:0;transition:width .3s}
+  .today{font-family:var(--mono);font-size:11px;color:var(--dim);text-align:center;margin:-8px 0 18px}
+  .today b{color:var(--bone)}
+
+  /* question card */
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px 22px 20px}
+  .scenario{font-size:14.5px;color:var(--ink);line-height:1.55;text-align:center;min-height:42px}
+  .scenario b{color:var(--bone)} .scenario .pos{color:var(--gold);font-weight:600}
+  .hand{display:flex;justify-content:center;gap:10px;margin:18px 0 6px}
+  .card-face{width:60px;height:84px;border-radius:9px;background:#f4f1e8;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.35);position:relative}
+  .card-face .r{font-family:Georgia,serif;font-size:30px;font-weight:700;line-height:1}
+  .card-face .su{font-size:22px;line-height:1;margin-top:2px}
+  .card-face.red .r,.card-face.red .su{color:#c0392b} .card-face.blk .r,.card-face.blk .su{color:#1a1a1a}
+  .handtok{text-align:center;font-family:var(--mono);font-size:12px;color:var(--dim);margin-bottom:16px}
+
+  .actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+  .actions button{font-family:var(--ui);font-size:14px;font-weight:600;cursor:pointer;border-radius:10px;
+    padding:12px 22px;border:1px solid var(--line);background:#0e271f;color:var(--bone);min-width:96px;transition:.12s}
+  .actions button:hover{border-color:var(--gold)}
+  .actions button.raise{border-color:#5a4620} .actions button.call{border-color:#234} .actions button.fold{border-color:#3a2520}
+  .actions button:disabled{cursor:default;opacity:.5}
+  .actions button.picked{outline:2px solid var(--bone);outline-offset:1px}
+  .actions button.right{background:#16361f;border-color:var(--green);color:var(--green)}
+  .actions button.wrong{background:#2e1a16;border-color:var(--crimson);color:var(--crimson)}
+
+  .reveal{margin-top:18px;border-top:1px solid var(--line);padding-top:15px;display:none}
+  .reveal.show{display:block}
+  .verdict{font-family:var(--mono);font-size:13px;font-weight:700;text-align:center;margin-bottom:9px}
+  .verdict.ok{color:var(--green)} .verdict.no{color:var(--crimson)}
+  .why{font-size:13px;color:var(--ink);line-height:1.55;text-align:center}
+  .why b{color:var(--bone)}
+  .next{display:block;margin:16px auto 0;font-family:var(--ui);font-size:14px;font-weight:600;cursor:pointer;
+    background:var(--gold);color:var(--rail);border:none;border-radius:10px;padding:11px 28px}
+
+  .banner{background:linear-gradient(#16361f,#0e2017);border:1px solid var(--green);border-radius:12px;
+    padding:14px 16px;margin:16px 0;text-align:center;color:var(--green);font-family:var(--mono);font-size:13px;display:none}
+  .banner.show{display:block}
+
+  .foot{font-size:11.5px;color:var(--dim);line-height:1.55;margin-top:22px;
+    border-top:1px solid var(--line);padding-top:14px}
+  .foot b{color:var(--gold)}
+  .reset{font-family:var(--ui);font-size:11px;color:var(--dim);background:#0e271f;border:1px solid var(--line);
+    border-radius:7px;padding:5px 11px;cursor:pointer;margin-left:8px}
+  .reset:hover{border-color:var(--crimson);color:var(--crimson)}
+  .err{color:var(--gold);font-family:var(--mono);font-size:12px;text-align:center;padding:20px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Preflop Trainer <span class="dot">·</span> reps, not charts
+      <small>active recall on your reference ranges — attempt, then reveal</small></div>
+    <nav class="nav"><a href="stats.html">Stats</a><a href="replayer.html">Replayer</a><a href="study.html">Study</a></nav>
+  </header>
+
+  <div class="controls">
+    <label>difficulty
+      <select id="diff">
+        <option value="mixed">mixed</option><option value="easy">easy</option>
+        <option value="medium">medium</option><option value="tough">tough (boundaries)</option>
+        <option value="any">anything</option>
+      </select></label>
+    <label>spot
+      <select id="spot">
+        <option value="mixed">mixed</option><option value="rfi">open or fold (RFI)</option>
+        <option value="facing">facing a raise</option>
+      </select></label>
+  </div>
+
+  <div class="score">
+    <div class="s goal"><div class="v" id="sStreak">0</div><div class="t">clean streak</div></div>
+    <div class="s"><div class="v" id="sBest">0</div><div class="t">best streak</div></div>
+    <div class="s"><div class="v" id="sAcc">—</div><div class="t">last 100</div></div>
+    <div class="s"><div class="v" id="sTotal">0</div><div class="t">answered</div></div>
+  </div>
+  <div class="goalbar"><i id="goalFill"></i></div>
+  <div class="today" id="today"></div>
+
+  <div class="banner" id="banner">🏆 100 in a row — you've grooved the baseline. Now go deviate from it with reads.</div>
+
+  <div class="card" id="card"><div class="err" id="err" style="display:none"></div>
+    <div class="scenario" id="scenario"></div>
+    <div class="hand" id="hand"></div>
+    <div class="handtok" id="handtok"></div>
+    <div class="actions" id="actions"></div>
+    <div class="reveal" id="reveal">
+      <div class="verdict" id="verdict"></div>
+      <div class="why" id="why"></div>
+      <button class="next" id="next">Next →</button>
+    </div>
+  </div>
+
+  <div class="foot">
+    Graded against your <b>reference ranges</b> (the same ones in the replayer panel). Hitting 100/100 means
+    you know the baseline cold — which is the point: <b>you can't deviate sensibly from a range you don't know.</b>
+    In your loose game the real answer is often to open tighter early / wider for value late, and that judgment
+    isn't gradeable here. So treat this as grooving the fundamentals, not the finish line.
+    <button class="reset" id="reset">Reset progress</button>
+  </div>
+</div>
+
+<script src="gto.js"></script>
+<script>
+"use strict";
+const LS="pfq_";
+const store={get(k,d){try{const v=localStorage.getItem(LS+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem(LS+k,JSON.stringify(v));}catch(e){}},
+  clear(){try{Object.keys(localStorage).filter(x=>x.indexOf(LS)===0).forEach(x=>localStorage.removeItem(x));}catch(e){}}};
+
+const RANKS="AKQJT98765432";
+function todayKey(){const d=new Date();
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+const TOKENS=[];
+for(let i=0;i<13;i++)for(let j=0;j<13;j++)
+  TOKENS.push(i===j?RANKS[i]+RANKS[i]:(i<j?RANKS[i]+RANKS[j]+"s":RANKS[j]+RANKS[i]+"o"));
+
+let rfiCov={}, defCov={};
+const DEPTHS=["low","medium","deep","ultra"], RFI_POS=["EP/MP","CO","BTN","SB"];
+function precompute(){
+  TOKENS.forEach(t=>{
+    let c=0; DEPTHS.forEach(d=>RFI_POS.forEach(p=>{const r=GTO.RFI[d][p];if(r&&GTO._expand(r)[t])c++;}));
+    rfiCov[t]=c;
+    let f=0; DEPTHS.forEach(d=>["early","late"].forEach(b=>{const cell=GTO.DEF[d][b];
+      if(GTO._expand(cell.tb)[t]||GTO._expand(cell.call)[t])f++;})); defCov[t]=f;
+  });
+}
+function inBucket(cov,max,diff){
+  // returns predicate for difficulty given coverage value
+  const hi=max, lo=0;
+  return v=>{
+    if(diff==="any")return true;
+    const nearEdge = v<=Math.round(max*0.13) || v>=hi-Math.round(max*0.13);
+    const mid = v>=Math.round(max*0.37) && v<=Math.round(max*0.63);
+    if(diff==="easy")return nearEdge;
+    if(diff==="tough")return mid;
+    if(diff==="medium")return !nearEdge && !mid;
+    return true;
+  };
+}
+
+const DEPTH_LABEL={low:"≤20bb",medium:"20–50bb",deep:"50–150bb",ultra:"150bb+"};
+const POS_NAME={"EP/MP":"early position","CO":"the cutoff","BTN":"the button","SB":"the small blind","BB":"the big blind"};
+
+let scenario=null, answered=false;
+
+function pick(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function tokenToCards(tok){
+  const suits=["s","h","d","c"];
+  if(tok.length===2){ // pair
+    const sh=[...suits]; const a=sh.splice(Math.floor(Math.random()*4),1)[0]; const b=sh[Math.floor(Math.random()*3)];
+    return [tok[0]+a, tok[1]+b];
+  }
+  const suited=tok[2]==="s";
+  if(suited){const s=pick(suits);return [tok[0]+s,tok[1]+s];}
+  const sh=[...suits]; const a=sh.splice(Math.floor(Math.random()*4),1)[0]; const b=sh[Math.floor(Math.random()*3)];
+  return [tok[0]+a, tok[1]+b];
+}
+
+function genScenario(){
+  const diff=document.getElementById("diff").value;
+  const spotPref=document.getElementById("spot").value;
+  const type = spotPref==="mixed" ? pick(["rfi","facing"]) : spotPref;
+  const depth=pick(DEPTHS);
+  let s={type,depth};
+  if(type==="rfi"){
+    s.pos=pick(RFI_POS);
+    const ok=inBucket(rfiCov,16,diff);
+    let pool=TOKENS.filter(ok); if(!pool.length)pool=TOKENS;
+    s.tok=pick(pool);
+    s.correct = GTO._expand(GTO.RFI[s.depth][s.pos])[s.tok] ? "open":"fold";
+    s.acts=[["open","Open"],["fold","Fold"]];
+  } else {
+    s.bucket=pick(["early","late"]);
+    s.heroPos = s.bucket==="early" ? pick(["CO","BTN","BB"]) : pick(["SB","BB"]);
+    s.isBB = s.heroPos==="BB";
+    const ok=inBucket(defCov,8,diff);
+    let pool=TOKENS.filter(ok); if(!pool.length)pool=TOKENS;
+    s.tok=pick(pool);
+    const cell=GTO.DEF[s.depth][s.bucket];
+    const tb=GTO._expand(cell.tb), call=GTO._expand(cell.call);
+    if(s.isBB){const ex=GTO._expand(GTO.BB_EXTRA[s.depth]);for(const k in ex)call[k]=1;}
+    s.correct = tb[s.tok]?"3bet":(call[s.tok]?"call":"fold");
+    s.acts=[["3bet","3-bet"],["call","Call"],["fold","Fold"]];
+  }
+  s.cards=tokenToCards(s.tok);
+  return s;
+}
+
+function renderScenario(){
+  scenario=genScenario(); answered=false;
+  const sc=document.getElementById("scenario");
+  if(scenario.type==="rfi"){
+    sc.innerHTML=`Stacks are <b>${DEPTH_LABEL[scenario.depth]}</b>. It folds to you in `+
+      `<span class="pos">${POS_NAME[scenario.pos]}</span>. Action?`;
+  } else {
+    const raiser = scenario.bucket==="early"?"an early-position player":"a late-position player";
+    sc.innerHTML=`Stacks are <b>${DEPTH_LABEL[scenario.depth]}</b>. ${raiser[0].toUpperCase()+raiser.slice(1)} `+
+      `opens to ~2.5bb. You're in <span class="pos">${POS_NAME[scenario.heroPos]}</span>. Action?`;
+  }
+  // cards
+  const SU={s:["♠","blk"],c:["♣","blk"],h:["♥","red"],d:["♦","red"]};
+  document.getElementById("hand").innerHTML=scenario.cards.map(c=>{
+    const r=c[0]==="T"?"10":c[0]; const su=SU[c[1]];
+    return `<div class="card-face ${su[1]}"><span class="r">${r}</span><span class="su">${su[0]}</span></div>`;
+  }).join("");
+  document.getElementById("handtok").textContent=scenario.tok;
+  // actions
+  const act=document.getElementById("actions"); act.innerHTML="";
+  scenario.acts.forEach(([code,label])=>{
+    const b=document.createElement("button");
+    b.textContent=label; b.dataset.code=code;
+    b.className = code==="open"||code==="3bet"?"raise":code==="call"?"call":"fold";
+    b.onclick=()=>answer(code,b);
+    act.appendChild(b);
+  });
+  document.getElementById("reveal").classList.remove("show");
+  document.getElementById("banner").classList.remove("show");
+}
+
+function reasonText(s){
+  const tok=s.tok, suited=tok.endsWith("s"), pair=tok.length===2, off=tok.endsWith("o");
+  if(s.type==="rfi"){
+    if(s.correct==="open") return `<b>${tok}</b> from ${POS_NAME[s.pos]} (${DEPTH_LABEL[s.depth]}) is inside the opening range — <b>raise</b>.`;
+    let hint = pair?"too small to open from here":off?"offsuit and easily dominated":"too speculative for this position";
+    return `<b>${tok}</b> from ${POS_NAME[s.pos]} (${DEPTH_LABEL[s.depth]}) is a <b>fold</b> — ${hint}.`;
+  }
+  const raiser = s.bucket==="early"?"an early-position open":"a late-position open";
+  if(s.correct==="3bet") return `<b>${tok}</b> in ${POS_NAME[s.heroPos]} vs ${raiser} (${DEPTH_LABEL[s.depth]}) is a <b>3-bet</b>.`;
+  if(s.correct==="call") return `<b>${tok}</b> in ${POS_NAME[s.heroPos]} vs ${raiser} (${DEPTH_LABEL[s.depth]}) is a <b>call</b>.`;
+  return `<b>${tok}</b> in ${POS_NAME[s.heroPos]} vs ${raiser} (${DEPTH_LABEL[s.depth]}) is a <b>fold</b>.`;
+}
+
+function answer(code,btn){
+  if(answered)return; answered=true;
+  const correct = code===scenario.correct;
+  // disable + color buttons
+  document.querySelectorAll("#actions button").forEach(b=>{
+    b.disabled=true;
+    if(b.dataset.code===scenario.correct) b.classList.add("right");
+    if(b.dataset.code===code && !correct) b.classList.add("wrong");
+    if(b.dataset.code===code) b.classList.add("picked");
+  });
+  // record
+  const hist=store.get("hist",[]); hist.push(correct?1:0);
+  if(hist.length>500)hist.splice(0,hist.length-500);
+  store.set("hist",hist);
+  let streak=store.get("streak",0); streak = correct?streak+1:0; store.set("streak",streak);
+  let best=store.get("best",0); if(streak>best){best=streak;store.set("best",best);}
+  // daily log (read by the study page)
+  const daily=store.get("daily",{}); const dk=todayKey(); const e=daily[dk]||{a:0,c:0};
+  e.a++; if(correct)e.c++; daily[dk]=e; store.set("daily",daily);
+  store.set("lastPlayed",Date.now());
+  if(!correct){
+    const misses=store.get("misses",[]);
+    misses.push({ts:Date.now(),day:dk,tok:scenario.tok,type:scenario.type,depth:scenario.depth,
+      pos:scenario.type==="rfi"?scenario.pos:scenario.heroPos,
+      bucket:scenario.bucket||null,isBB:!!scenario.isBB,chose:code,correct:scenario.correct});
+    const cutoff=Date.now()-14*864e5;          // keep ~2 weeks
+    store.set("misses", misses.filter(m=>m.ts>=cutoff).slice(-600));
+  }
+  store.set("total",(store.get("total",0)||0)+1);   // uncapped lifetime total
+  // reveal
+  const v=document.getElementById("verdict");
+  v.textContent = correct?"✓ Correct":"✗ "+ ({open:"Open",fold:"Fold","3bet":"3-bet",call:"Call"})[scenario.correct]+" is the play";
+  v.className="verdict "+(correct?"ok":"no");
+  document.getElementById("why").innerHTML=reasonText(scenario);
+  document.getElementById("reveal").classList.add("show");
+  renderStats();
+  if(streak>=100 && correct) document.getElementById("banner").classList.add("show");
+}
+
+function renderStats(){
+  const hist=store.get("hist",[]); const streak=store.get("streak",0); const best=store.get("best",0);
+  const last=hist.slice(-100); const acc=last.length?Math.round(last.reduce((a,b)=>a+b,0)/last.length*100):null;
+  document.getElementById("sStreak").innerHTML = streak+'<small>/100</small>';
+  document.getElementById("sBest").textContent = best;
+  document.getElementById("sAcc").innerHTML = acc==null?"—":acc+'<small>%</small>';
+  // total is uncapped; recover/repair from the (uncapped) daily log if needed
+  const daSum=Object.values(store.get("daily",{})).reduce((s,e)=>s+(e.a||0),0);
+  const total=Math.max(store.get("total",0), daSum, hist.length);
+  store.set("total",total);
+  document.getElementById("sTotal").textContent = total;
+  document.getElementById("goalFill").style.width = Math.min(100,streak)+"%";
+  const daily=store.get("daily",{}); const t=daily[todayKey()]||{a:0,c:0};
+  document.getElementById("today").innerHTML = t.a
+    ? `Today: <b>${t.a}</b> reps · <b>${Math.round(t.c/t.a*100)}%</b> correct`
+    : "No reps logged today yet";
+}
+
+(function(){
+  if(typeof GTO==="undefined"||!GTO.RFI){
+    document.getElementById("err").style.display="block";
+    document.getElementById("err").textContent="Couldn't load gto.js — keep it in the same folder as this file and serve the folder (python3 -m http.server).";
+    return;
+  }
+  precompute();
+  renderStats();
+  renderScenario();
+  document.getElementById("next").onclick=renderScenario;
+  document.getElementById("diff").onchange=renderScenario;
+  document.getElementById("spot").onchange=renderScenario;
+  document.getElementById("reset").onclick=()=>{ if(confirm("Clear all trainer progress in this browser?")){store.clear();renderStats();renderScenario();}};
+  document.addEventListener("keydown",e=>{
+    if(answered && (e.key==="Enter"||e.key===" ")){renderScenario();e.preventDefault();return;}
+    if(answered)return;
+    const map = scenario.type==="rfi" ? {r:"open",o:"open",f:"fold"} : {t:"3bet",["3"]:"3bet",c:"call",f:"fold"};
+    const code=map[e.key.toLowerCase()];
+    if(code){const b=[...document.querySelectorAll("#actions button")].find(x=>x.dataset.code===code); if(b)answer(code,b);}
+  });
+})();
+</script>
+</body>
+</html>

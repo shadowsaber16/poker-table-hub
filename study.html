@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Up The Stakes — 33-Day Study Log</title>
+<style>
+  :root{
+    --table-deep:#0b211c; --felt:#15463a; --rail:#07140f;
+    --bone:#ece6d6; --ink:#cdd6d1; --dim:#5c706a; --line:#22433a; --panel:#0c241d;
+    --gold:#d9a441; --blue:#5b9bd1; --crimson:#c75a4a; --green:#6fbf8e;
+    --ui:"Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
+    --mono:ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,Charter,"Times New Roman",serif;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:var(--ui);color:var(--ink);
+    background:
+      radial-gradient(120% 80% at 50% -10%, #123c31 0%, var(--table-deep) 55%, var(--rail) 120%);
+    background-attachment:fixed;min-height:100vh;line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:var(--gold)}
+  .wrap{max-width:880px;margin:0 auto;padding:30px 22px 90px}
+
+  /* ---- masthead ---- */
+  header.top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px;
+    border-bottom:1px solid var(--line);padding-bottom:16px}
+  .brand{font-size:19px;font-weight:600;letter-spacing:.01em;color:var(--bone)}
+  .brand .dot{color:var(--gold)}
+  .brand small{display:block;font-family:var(--mono);font-size:11px;color:var(--dim);
+    letter-spacing:.06em;margin-top:4px;font-weight:400}
+  .nav a{font-size:12px;text-decoration:none;color:var(--dim);margin-left:16px}
+  .nav a:hover{color:var(--gold)}
+
+  h2.section{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--dim);
+    font-weight:600;margin:40px 0 4px;display:flex;align-items:center;gap:10px}
+  h2.section::after{content:"";flex:1;height:1px;background:var(--line)}
+  .sub{font-size:12.5px;color:var(--dim);margin:0 0 18px;max-width:62ch}
+
+  /* ---- scoreboard ---- */
+  .board-label{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--dim);margin:18px 0 9px;display:flex;align-items:center;gap:8px}
+  .board-label .tag{font-size:9px;border:1px solid var(--line);border-radius:20px;padding:2px 8px;
+    letter-spacing:.1em}
+  .tag.earned{color:var(--gold);border-color:#5a4620}
+  .tag.claimed{color:var(--blue);border-color:#23414f}
+
+  .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+  .metric{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px 16px 14px;
+    position:relative;overflow:hidden}
+  .metric .t{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--dim)}
+  .metric .v{font-family:var(--mono);font-size:33px;font-weight:700;color:var(--bone);
+    margin-top:8px;line-height:1;letter-spacing:-.01em}
+  .metric .v .u{font-size:15px;color:var(--dim);margin-left:1px}
+  .metric .trend{font-family:var(--mono);font-size:11px;margin-top:7px;color:var(--dim)}
+  .metric .trend .up{color:var(--green)} .metric .trend .down{color:var(--crimson)}
+  .metric .trend .flat{color:var(--dim)}
+  .metric .read{font-size:11px;color:var(--dim);margin-top:9px;line-height:1.45;
+    border-top:1px solid var(--line);padding-top:8px}
+  .metric .read b{color:var(--ink);font-weight:600}
+  .metric .spark{display:flex;gap:4px;margin-top:9px;align-items:flex-end;height:22px}
+  .metric .spark i{flex:1;background:#1b3a31;border-radius:2px 2px 0 0;min-height:3px;display:block}
+  .metric .spark i.last{background:var(--gold)}
+  .metric.dead .v{color:var(--dim)} .metric.dead{opacity:.7}
+
+  .target{position:absolute;top:14px;right:14px;font-family:var(--mono);font-size:10px;
+    color:var(--dim);text-align:right}
+  .target b{display:block;color:var(--gold);font-size:11px}
+
+  /* ---- weekly effort ---- */
+  .effort{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .effort .hd{display:grid;grid-template-columns:1fr repeat(7,26px);gap:6px;align-items:center;
+    font-family:var(--mono);font-size:10px;color:var(--dim);letter-spacing:.04em}
+  .effort .hd .day{text-align:center}
+  .effort .row{display:grid;grid-template-columns:1fr repeat(7,26px);gap:6px;align-items:center;
+    margin-top:10px}
+  .effort .row input.lbl{background:#081a14;border:1px solid var(--line);color:var(--bone);
+    border-radius:7px;padding:7px 9px;font-family:var(--ui);font-size:12.5px;width:100%}
+  .effort .row input.lbl::placeholder{color:var(--dim)}
+  .effort .box{width:26px;height:26px;border:1px solid var(--line);border-radius:6px;background:#081a14;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;color:transparent;
+    font-size:13px;transition:.12s}
+  .effort .box:hover{border-color:var(--gold)}
+  .effort .box.on{background:var(--gold);border-color:var(--gold);color:var(--rail)}
+  .effort .foot{font-size:11px;color:var(--dim);margin-top:13px;line-height:1.5}
+
+  /* ---- tasks ---- */
+  .task{display:flex;gap:13px;align-items:flex-start;background:var(--panel);
+    border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:10px}
+  .task .badge{font-family:var(--mono);font-size:10px;color:var(--dim);border:1px solid var(--line);
+    border-radius:6px;padding:3px 7px;white-space:nowrap;margin-top:1px}
+  .task .body{flex:1}
+  .task .txt{font-size:13.5px;color:var(--ink);line-height:1.45}
+  .task .txt .infer{font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;color:var(--gold);
+    border:1px solid #5a4620;border-radius:5px;padding:1px 5px;margin-left:7px;text-transform:uppercase;
+    vertical-align:middle}
+  .task .link{font-size:11px;color:var(--dim);margin-top:5px}
+  .task .states{display:flex;gap:6px;margin-top:9px}
+  .task .st{font-family:var(--mono);font-size:11px;padding:4px 10px;border-radius:7px;cursor:pointer;
+    border:1px solid var(--line);background:#0e271f;color:var(--dim)}
+  .task .st:hover{border-color:var(--gold);color:var(--bone)}
+  .task .st.on[data-s="done"]{background:#16361f;border-color:var(--green);color:var(--green)}
+  .task .st.on[data-s="skip"]{background:#2e1a16;border-color:var(--crimson);color:var(--crimson)}
+  .task.done{opacity:.62}
+  .task.done .txt{text-decoration:line-through;text-decoration-color:var(--dim)}
+
+  /* ---- lesson feed ---- */
+  .feed{position:relative;margin-top:8px;padding-left:54px}
+  .feed::before{content:"";position:absolute;left:21px;top:6px;bottom:14px;width:2px;
+    background:linear-gradient(var(--line),transparent)}
+  .lesson{position:relative;margin-bottom:30px}
+  .node{position:absolute;left:-54px;top:0;width:42px;height:42px;border-radius:50%;
+    border:2px solid var(--line);background:var(--rail);display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:13px;font-weight:700;color:var(--dim);z-index:2}
+  .lesson.logged .node{border-color:var(--gold);color:var(--gold)}
+  .lesson.mastered .node{background:var(--gold);color:var(--rail);border-color:var(--gold)}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px 22px}
+  .card .eyebrow{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--dim);display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .card h3{font-family:var(--serif);font-size:23px;font-weight:600;color:var(--bone);
+    margin:6px 0 0;letter-spacing:.01em}
+  .principle{font-family:var(--serif);font-size:15.5px;font-style:italic;color:var(--gold);
+    margin:12px 0 16px;line-height:1.45;border-left:2px solid #5a4620;padding-left:14px}
+
+  .block{margin:15px 0}
+  .block .lab{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--dim);margin-bottom:6px}
+  .lesson-body{font-family:var(--serif);font-size:15px;color:var(--ink);line-height:1.62}
+  .lesson-body em{color:var(--bone);font-style:italic}
+
+  .delta{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0}
+  @media(max-width:560px){.delta{grid-template-columns:1fr}.metrics{grid-template-columns:1fr}}
+  .delta .col{border:1px solid var(--line);border-radius:10px;padding:12px 13px;background:#0a1f18}
+  .delta .col .h{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    margin-bottom:7px;display:flex;align-items:center;gap:6px}
+  .delta .flagged .h{color:var(--blue)} .delta .missed .h{color:var(--crimson)}
+  .delta .col p{margin:0 0 8px;font-size:12.5px;line-height:1.5;color:var(--ink)}
+  .delta .col p:last-child{margin-bottom:0}
+
+  .protake{border:1px solid #5a4620;background:linear-gradient(#13261b,#0e2017);border-radius:11px;
+    padding:14px 16px;margin:16px 0 6px}
+  .protake .h{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:8px;display:flex;align-items:center;gap:7px}
+  .protake p{margin:0 0 9px;font-size:13px;line-height:1.58;color:var(--ink)}
+  .protake p:last-child{margin-bottom:0}
+  .protake b{color:var(--bone)}
+
+  .foot-row{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+    margin-top:16px;border-top:1px solid var(--line);padding-top:13px}
+  .leak{font-family:var(--mono);font-size:11px;color:var(--dim)}
+  .leak .pill{display:inline-block;background:#2e1a16;color:var(--crimson);border:1px solid #5a2f27;
+    border-radius:20px;padding:2px 10px;font-size:10px;letter-spacing:.03em;margin-left:6px}
+  .leak .pill.meta{background:#0e271f;color:var(--blue);border-color:#23414f}
+  .status-sel{display:flex;gap:6px}
+  .status-sel .s{font-family:var(--mono);font-size:11px;padding:4px 11px;border-radius:7px;cursor:pointer;
+    border:1px solid var(--line);background:#0e271f;color:var(--dim)}
+  .status-sel .s:hover{border-color:var(--gold);color:var(--bone)}
+  .status-sel .s.on{background:#16361f;border-color:var(--green);color:var(--green)}
+
+  .progress{font-family:var(--mono);font-size:11px;color:var(--dim);margin:14px 0 0}
+  .progress b{color:var(--gold)}
+  .reset{font-family:var(--ui);font-size:11px;color:var(--dim);background:#0e271f;border:1px solid var(--line);
+    border-radius:7px;padding:6px 12px;cursor:pointer;margin-left:10px}
+  .reset:hover{border-color:var(--crimson);color:var(--crimson)}
+  .datanote{font-family:var(--mono);font-size:11px;color:var(--dim);background:var(--panel);
+    border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin-top:14px}
+  .datanote.warn{border-color:#5a4620;color:var(--gold)}
+  .datanote input[type=file]{font-family:var(--ui);font-size:11px;color:var(--ink);margin-left:6px}
+  .tl-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+  @media(max-width:560px){.tl-cards{grid-template-columns:repeat(2,1fr)}}
+  .tl-card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 14px 12px}
+  .tl-card .v{font-family:var(--mono);font-size:26px;font-weight:700;color:var(--bone);line-height:1}
+  .tl-card .v small{font-size:13px;color:var(--dim)} .tl-card.gold .v{color:var(--gold)}
+  .tl-card .t{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin-top:7px}
+  .tl-strip{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px}
+  .tl-strip .lab{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:11px}
+  .tl-days{display:flex;gap:5px;align-items:flex-end;height:54px}
+  .tl-days .d{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;height:100%;justify-content:flex-end}
+  .tl-days .d .bar{width:100%;border-radius:3px 3px 0 0;background:#1b3a31;min-height:3px}
+  .tl-days .d .bar.hot{background:var(--gold)} .tl-days .d .bar.warm{background:var(--green)} .tl-days .d .bar.cold{background:var(--crimson)}
+  .tl-days .d .dl{font-family:var(--mono);font-size:8px;color:var(--dim)}
+  .tl-empty{background:var(--panel);border:1px dashed var(--line);border-radius:12px;padding:18px;
+    font-family:var(--mono);font-size:12px;color:var(--dim);text-align:center}
+  .tl-empty a{color:var(--gold)}
+  .tl-misses{margin-top:16px}
+  .tl-mtitle{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin-bottom:9px}
+  .tl-day{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .tl-day .dh{font-family:var(--mono);font-size:11.5px;color:var(--bone);margin-bottom:6px;display:flex;justify-content:space-between;gap:10px}
+  .tl-day .dh .sm{color:var(--dim);font-weight:400}
+  .tl-miss{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid rgba(34,67,58,.5)}
+  .tl-miss .tk{font-family:var(--mono);font-weight:700;color:var(--gold);min-width:40px;font-size:13px}
+  .tl-miss .sc{color:var(--dim);font-family:var(--mono);font-size:11px;flex:1;min-width:120px}
+  .tl-miss .ans{font-family:var(--mono);font-size:11px;white-space:nowrap}
+  .tl-miss .ans .x{color:var(--crimson)} .tl-miss .ans .ok{color:var(--green)}
+  .tl-miss .cnt{font-family:var(--mono);font-size:10px;color:var(--dim);white-space:nowrap}
+  .tl-clean{font-family:var(--mono);font-size:11.5px;color:var(--green)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">Up The Stakes <span class="dot">·</span> 33-Day Study Log
+      <small>Nelson Dong email course — review log + leak feedback for Trish</small>
+    </div>
+    <nav class="nav">
+      <a href="stats.html">Stats →</a>
+      <a href="replayer.html">Replayer →</a>
+    </nav>
+  </header>
+
+  <!-- ============ SCOREBOARD ============ -->
+  <h2 class="section">Your scoreboard</h2>
+  <p class="sub">Leading indicators, not the chip graph. The top row is computed from your hands —
+    you can't fake it. The bottom row is effort you log yourself.</p>
+
+  <div class="board-label"><span class="tag earned">Earned</span> Computed from your sessions</div>
+  <div class="metrics" id="computed">
+    <div class="metric dead"><div class="t">Preflop chart-match</div><div class="v">—</div>
+      <div class="read">Load your hands to compute.</div></div>
+    <div class="metric dead"><div class="t">VPIP</div><div class="v">—</div>
+      <div class="read">Load your hands to compute.</div></div>
+    <div class="metric dead"><div class="t">All-in avg equity</div><div class="v">—</div>
+      <div class="read">Load your hands to compute.</div></div>
+  </div>
+  <div id="dataNote" class="datanote warn">Couldn't auto-load <code>parsed_hands.json</code>.
+    Serve this folder (<code>python3 -m http.server 8000</code>) or load it manually:
+    <input type="file" id="fileIn" accept=".json"></div>
+
+  <div class="board-label" style="margin-top:24px"><span class="tag claimed">Claimed</span>
+    Your weekly effort — Day 2 task</div>
+  <div class="effort" id="effort">
+    <div class="hd"><div>Metric (edit these)</div>
+      <div class="day">M</div><div class="day">T</div><div class="day">W</div><div class="day">T</div>
+      <div class="day">F</div><div class="day">S</div><div class="day">S</div></div>
+    <!-- rows injected -->
+    <div class="foot">Three effort metrics, in your control, measurable, tied to your development.
+      Tick a box each day you hit one. Suggested defaults are loaded — overwrite them with yours.
+      Saved in this browser only.</div>
+  </div>
+
+  <!-- ============ PREFLOP TRAINER LOG ============ -->
+  <h2 class="section">Preflop trainer</h2>
+  <p class="sub">Reps logged from the trainer — the cleanest leading indicator you have, because
+    you can't fake it. Drill in the trainer; it shows up here.</p>
+  <div id="trainerLog"></div>
+
+  <!-- ============ TASKS ============ -->
+  <h2 class="section">Active tasks</h2>
+  <p class="sub">Every do-this Nelson assigns lands here and stays until you close it.</p>
+  <div id="tasks"></div>
+
+  <!-- ============ LESSON FEED ============ -->
+  <h2 class="section">Lesson feed</h2>
+  <p class="sub">Oldest first — reread the arc in order. Each card: the lesson, what you flagged vs.
+    missed, my pro take, and the leak it maps to.</p>
+  <div class="progress" id="progress"></div>
+  <div class="feed" id="feed"></div>
+
+</div>
+
+<script src="hub.js"></script>
+<script src="gto.js"></script>
+<script>
+"use strict";
+let HERO_ID=null;   // set by HUB at load
+const LS="nd33_";
+const store={
+  get(k,d){try{const v=localStorage.getItem(LS+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
+  set(k,v){try{localStorage.setItem(LS+k,JSON.stringify(v));}catch(e){}},
+  clearAll(){try{Object.keys(localStorage).filter(x=>x.indexOf(LS)===0).forEach(x=>localStorage.removeItem(x));}catch(e){}}
+};
+
+/* ---------------- lesson content ---------------- */
+const LESSONS=[
+{
+  day:1, title:"The Improvement Flywheel", status_default:"studying",
+  principle:"Play → Make Mistakes → Review & Refine → Implement → Repeat.",
+  lesson:`Nelson opens not with strategy but with the engine behind all of it. The loop —
+    <em>play, make mistakes, review &amp; refine, implement, repeat</em> — is his "money-making machine."
+    The point isn't the loop itself (everyone nods at it); it's that <em>it only works if no cog ever
+    stops</em>. You can't implement without reviewing, can't review without spotting mistakes, can't make
+    mistakes without playing. Run it continuously for years and success is inevitable; the catch is almost
+    no one sustains it. The real thesis, aimed straight at you: you're not getting the results you want
+    <em>because you're not yet the player who earns them</em> — not bad luck, not variance.`,
+  flagged:[`The loop itself — the five steps. That's the literal headline, so it's the right spine to grab.`],
+  missed:[
+    `The actual thesis: "you're not good enough <em>yet</em> — not bad luck, not running poorly." That's
+     the uncomfortable, personally-aimed line, and it's the one that matters. Your own data says the same
+     thing: −1,761 below all-in equity <em>feels</em> like running bad, but getting it in at 41% average
+     says "not good enough yet."`,
+    `The specific failure mode he names — "most players play without review and repeat the same errors."
+     You've built the review apparatus; the open question is whether you implement off it or just admire it.`],
+  pro:[
+    `The flywheel is just deliberate practice in a poker jersey — it's correct, I won't argue it. But
+     "review" is doing enormous unspecified work here, and most players' review is <b>results-oriented</b>:
+     they replay pots they lost and conclude "cooler." Your tooling already guards against that — equity-vs-result
+     and the GTO-deviation flags force <b>process</b> review. That's the one cog Nelson hand-waves, and it's
+     the one you've over-built. Good.`,
+    `One caution: he sells continuity as the moat ("almost no one does it for a decade"). True, but don't let
+     10-year-journey energy distract you. You don't need a decade to stop bleeding — your single biggest leak
+     is fixable in one session of range discipline.`],
+  leak:{label:"Maps to", pills:[{t:"\"it's variance\" self-story",cls:""},{t:"review→implement gap",cls:"meta"}]}
+},
+{
+  day:2, title:"Track Leading, Not Lagging, Indicators", status_default:"studying",
+  principle:"Score yourself on effort you control, not on results you don't.",
+  lesson:`The trap: you tie your sense of progress to <em>lagging indicators</em> — profit this week, the
+    stakes you play, whether you won last session. None of them tell you if you're actually improving, so you
+    always feel like you're playing catch-up. The fix is to track <em>leading indicators</em> you fully control:
+    hours studied, hand-history reviews completed, hours played, how well you stuck to your schedule. The task:
+    take five minutes and write down <em>3 concrete effort metrics</em> for the next 7 days — each in your full
+    control, easy to measure, and tied to your development. That's your new scoreboard. Let the profit come when
+    it comes; for now, fall in love with building.`,
+  flagged:[`Both halves — the lagging-indicator trap <em>and</em> the leading-indicator fix, with the examples.
+     Much sharper than Day 1: you skipped the motivational filler and kept the actionable frame. That's what a
+     good highlight looks like.`],
+  missed:[`Only the task's three criteria — "in your control / easy to measure / tied to development." Minor,
+     but since the whole point is acting on this, the do-it-now part is worth keeping.`],
+  pro:[
+    `Correct, and it's the direct antidote to the error your data exposed: reading the −3,860 as "how am I
+     doing" is scoring yourself on a lagging number. But effort metrics have their own trap — they become
+     <b>vanity metrics</b>. You can log 20 minutes a day reviewing the wrong things (coolers you got unlucky in)
+     and feel productive while improving nothing. Nelson says track effort; I'd say track effort <b>on the right
+     leak</b>.`,
+    `So make your three sharper than his generic list — and wire two of them to numbers you literally can't
+     fake, both already computed above: <b>preflop chart-match %</b> (watch it climb from ~70%) and <b>VPIP
+     trend</b> (drifting from 48% toward the mid-30s). Add one pure-effort habit metric (hands reviewed) to keep
+     the loop turning. Track "hours studied" and you can fool yourself; track "chart-match up while VPIP down"
+     and you can't.`],
+  leak:{label:"Maps to", pills:[{t:"preflop looseness (VPIP 48%)",cls:""},{t:"process",cls:"meta"}]}
+},
+{
+  day:3, title:"Understand Your Opens, Don't Memorize Them", status_default:"studying",
+  principle:"If you don't understand why you're opening a hand, you're not building a strategy — you're pressing buttons.",
+  lesson:`Nelson goes straight at preflop — not your colour-coded PDF, your <em>actual</em> decisions when money's
+    on the line. Most players "study" preflop by downloading a range and calling it done. But following a chart
+    blindly isn't strategy; understanding what the range is <em>solving</em> is. Opens should rest on real
+    principles — <em>pressure, position, stack depth, player-pool dynamics</em> — not on what a chart says under
+    perfect conditions. The core mistake: people take solved ranges built for one stack size, one rake
+    environment, one setup, and apply them everywhere, then wonder why it feels off. Winners don't have better
+    charts; they have better understanding — why hands play better in early position, why blockers matter in some
+    spots, why a hand prints at 100bb and loses value at 20bb. Today's task: pick one position, write out (don't
+    eyeball) why you open each hand, your most marginal open and why, how stack depth changes it, and how it
+    shifts UTG vs. button.`,
+  flagged:[`Almost the whole actionable email — the "pressing buttons" line, the four principles, the
+     "solved ranges applied everywhere" mistake, and the full written task. A very complete highlight.`],
+  missed:[`Only the concrete examples that make it stick — blockers mattering situationally, and hands that
+     print at 100bb but lose value at 20bb — plus the reframe "winners don't have better charts, they have
+     better understanding." You took the spine and left the illustrations. Minor.`],
+  pro:[
+    `This is the email that maps cleanest onto your #1 leak — but "build your own range from principles" is a
+     <b>double-edged sword at 48% VPIP</b>. For a tight reg it's liberating; for you it can become a license to
+     rationalize loose opens ("pool's soft, so I open J5s — that's a principle"). That's the spew trap in
+     Nelson's vocabulary. Invert it for yourself: <b>chart as guardrails first, earn the right to deviate
+     second.</b>`,
+    `The real tailored principle for your live, loose, deep game is the opposite of what looseness wants to
+     hear: open <b>tighter</b> from early position (loose callers punish weak offsuit by calling and outflopping
+     you) and widen <b>for value</b> in late position where they overcall. And do his exercise on your
+     <b>leakiest position first</b> — check by-position VPIP in Stats — not on Low Jack.`],
+  leak:{label:"Maps to", pills:[{t:"preflop looseness — the core leak",cls:""},{t:"chart-match metric",cls:"meta"}]}
+}
+];
+
+/* ---------------- tasks ---------------- */
+const TASKS=[
+  {id:"d1-loop", day:"Day 1", derived:true,
+   txt:"Run the full loop after every session — review, spot mistakes, implement. Don't just play.",
+   link:"Nelson didn't assign an explicit task on Day 1; this is the non-negotiable habit the lesson implies."},
+  {id:"d2-metrics", day:"Day 2", derived:false,
+   txt:"Write down 3 effort metrics to track for the next 7 days (in your control, measurable, tied to development).",
+   link:"Fill them into the “Claimed” effort tracker in your scoreboard above."},
+  {id:"d3-opens", day:"Day 3", derived:false,
+   txt:"Pick one position and write out (don't eyeball) your opening range: why each hand, your most marginal open and why, how stack depth changes it, and how it shifts UTG vs. button.",
+   link:"Do it for your leakiest position first — check by-position VPIP in Stats — not Low Jack."}
+];
+
+/* default effort metric labels (Day 2) — wired to the pro-take suggestion */
+const EFFORT_DEFAULTS=[
+  "Preflop opens reviewed vs chart",
+  "Minutes studied (target 20+)",
+  "Reviewed session after playing"
+];
+
+/* ---------------- computed metrics ---------------- */
+function heroSeat(h){const p=(h.players||[]).find(x=>x.is_hero||x.id===HERO_ID);return p?p.seat:null;}
+function sessions(hands){
+  const m={};hands.forEach(h=>{const k=h.file||"?";(m[k]=m[k]||[]).push(h);});
+  return Object.keys(m).map(f=>({file:f,hands:m[f],started:(m[f][0].started_at)||""}))
+    .sort((a,b)=>{const na=Number(a.started),nb=Number(b.started);
+      if(!isNaN(na)&&!isNaN(nb)&&a.started!==""&&b.started!=="")return na-nb;
+      return String(a.started).localeCompare(String(b.started));});
+}
+function vpipOf(hands){
+  let n=0,vp=0;
+  hands.forEach(h=>{if(h.variant==="plo")return;const s=heroSeat(h);if(s==null||!h.players.some(p=>p.seat===s))return;n++;
+    let rc=0,vf=false;
+    for(const x of (h.actions||[])){if(x.street!=="preflop")continue;
+      if(x.seat===s){if(x.action==="raise"||x.action==="call")vf=true;}
+    }
+    if(vf)vp++;});
+  return {n, vpip:n?vp/n*100:null};
+}
+function chartOf(hands){
+  if(typeof GTO==="undefined")return null;
+  let on=0,m=0;
+  hands.forEach(h=>{if(h.variant==="plo")return;const s=heroSeat(h);if(s==null)return;
+    const r=GTO.evalPreflop(h,s);if(!r||r.situation==="offchart")return;on++;if(r.match)m++;});
+  return {on, pct:on?m/on*100:null};
+}
+function allinEqOf(hands){
+  let sum=0,c=0;
+  hands.forEach(h=>{if(h.variant==="plo")return;const s=heroSeat(h);const ai=h.allin;if(s==null||!ai||!ai.eq_lock)return;
+    const e=ai.eq_lock[String(s)];if(e==null)return;sum+=e;c++;});
+  return {n:c, eq:c?sum/c:null};
+}
+
+function fmt1(x){return (Math.round(x*10)/10).toFixed(1);}
+function spark(vals){ // vals = array of numbers (per session)
+  const mx=Math.max.apply(null,vals.concat([1]));
+  return '<div class="spark">'+vals.map((v,i)=>
+    '<i class="'+(i===vals.length-1?'last':'')+'" style="height:'+Math.max(3,(v/mx)*22)+'px"></i>').join('')+'</div>';
+}
+function trendLine(vals, betterUp){
+  if(vals.length<2)return '<span class="flat">single session — no trend yet</span>';
+  const d=vals[vals.length-1]-vals[vals.length-2];
+  const good = betterUp ? d>0 : d<0;
+  const cls = Math.abs(d)<0.05?"flat":(good?"up":"down");
+  const arrow = Math.abs(d)<0.05?"→":(d>0?"▲":"▼");
+  return '<span class="'+cls+'">'+arrow+' '+fmt1(Math.abs(d))+' vs last session</span>';
+}
+
+function renderComputed(hands){
+  // per-session trend uses only sessions you actually played (hero present),
+  // so a railed session (e.g. you weren't dealt in) can't draw a fake "you" dot
+  const ss=sessions(hands).filter(s=>s.hands.some(h=>heroSeat(h)!=null));
+  const cAll=chartOf(hands), vAll=vpipOf(hands), eAll=allinEqOf(hands);
+  const cPer=ss.map(s=>chartOf(s.hands)).map(x=>x&&x.pct!=null?x.pct:0);
+  const vPer=ss.map(s=>vpipOf(s.hands)).map(x=>x&&x.vpip!=null?x.vpip:0);
+  const ePer=ss.map(s=>allinEqOf(s.hands)).map(x=>x&&x.eq!=null?x.eq:0);
+
+  const cards=[];
+  // chart-match
+  cards.push(metricCard({
+    title:"Preflop chart-match", val:cAll&&cAll.pct!=null?fmt1(cAll.pct):"—", unit:"%",
+    target:"85%+", spark:cPer, betterUp:true,
+    read: cAll&&cAll.pct!=null
+      ? '<b>'+cAll.on+'</b> on-chart decisions. Off-chart spots (limped/3-bet/multiway) aren\'t scored.'
+      : 'gto.js not loaded — keep it beside this file.'
+  }));
+  // vpip
+  cards.push(metricCard({
+    title:"VPIP", val:vAll.vpip!=null?fmt1(vAll.vpip):"—", unit:"%",
+    target:"≤ 35%", spark:vPer, betterUp:false,
+    read:'Across <b>'+vAll.n+'</b> hands. Target is the mid-30s for a loose game — lower is the leak fix.'
+  }));
+  // all-in equity
+  cards.push(metricCard({
+    title:"All-in avg equity", val:eAll.eq!=null?fmt1(eAll.eq):"—", unit:"%",
+    target:"≥ 50%", spark:ePer, betterUp:true,
+    read:'Over <b>'+eAll.n+'</b> all-ins. Below 50% = getting it in as a dog. Small sample — read gently.'
+  }));
+  document.getElementById("computed").innerHTML=cards.join("");
+}
+function metricCard(o){
+  return '<div class="metric"><div class="target">target<b>'+o.target+'</b></div>'+
+    '<div class="t">'+o.title+'</div>'+
+    '<div class="v">'+o.val+(o.val!=="—"?'<span class="u">'+o.unit+'</span>':'')+'</div>'+
+    '<div class="trend">'+trendLine(o.spark,o.betterUp)+'</div>'+
+    (o.spark.length>1?spark(o.spark):'')+
+    '<div class="read">'+o.read+'</div></div>';
+}
+
+/* ---------------- preflop trainer log (reads the trainer's localStorage) ---------------- */
+function trainerRead(key,def){try{const v=localStorage.getItem("pfq_"+key);return v==null?def:JSON.parse(v);}catch(e){return def;}}
+function localDayKey(d){return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");}
+function renderTrainerLog(){
+  const host=document.getElementById("trainerLog");
+  const daily=trainerRead("daily",{});
+  const days=Object.keys(daily);
+  if(!days.length){
+    host.innerHTML=`<div class="tl-empty">No reps logged yet. Open the <a href="trainer.html">Preflop trainer</a> and drill a few — they'll show up here.</div>`;
+    return;
+  }
+  const best=trainerRead("best",0);
+  let totalA=0,totalC=0; days.forEach(k=>{totalA+=daily[k].a||0;totalC+=daily[k].c||0;});
+  const today=daily[localDayKey(new Date())]||{a:0,c:0};
+  // consecutive-day streak ending today or yesterday
+  let dstreak=0; const cur=new Date();
+  // allow streak to count if practiced today OR yesterday (don't break for "not yet today")
+  if(!daily[localDayKey(cur)]) cur.setDate(cur.getDate()-1);
+  while(daily[localDayKey(cur)]){dstreak++;cur.setDate(cur.getDate()-1);}
+  const accAll = totalA?Math.round(totalC/totalA*100):0;
+  const accToday = today.a?Math.round(today.c/today.a*100):null;
+
+  const cards=
+    `<div class="tl-card gold"><div class="v">${today.a}${accToday!=null?' <small>· '+accToday+'%</small>':''}</div><div class="t">today's reps</div></div>`+
+    `<div class="tl-card"><div class="v">${dstreak}<small> d</small></div><div class="t">day streak</div></div>`+
+    `<div class="tl-card"><div class="v">${totalA}</div><div class="t">total reps</div></div>`+
+    `<div class="tl-card"><div class="v">${accAll}<small>%</small></div><div class="t">overall accuracy</div></div>`;
+
+  // last 14 days strip
+  const strip=[]; let maxA=1;
+  for(let i=13;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const k=localDayKey(d);
+    const e=daily[k]||{a:0,c:0}; if(e.a>maxA)maxA=e.a; strip.push({d,k,e});}
+  const bars=strip.map(({d,e})=>{
+    const h=e.a?Math.max(8,Math.round(e.a/maxA*44)):3;
+    const acc=e.a?e.c/e.a:0;
+    const cls=!e.a?"":acc>=0.9?"hot":acc>=0.7?"warm":"cold";
+    const dl=["S","M","T","W","T","F","S"][d.getDay()];
+    return `<div class="d" title="${e.a} reps${e.a?', '+Math.round(acc*100)+'%':''}"><div class="bar ${cls}" style="height:${h}px"></div><span class="dl">${dl}</span></div>`;
+  }).join("");
+
+  host.innerHTML=
+    `<div class="tl-cards">${cards}</div>`+
+    `<div class="tl-strip"><div class="lab">Last 14 days · best clean run: ${best}</div><div class="tl-days">${bars}</div></div>`+
+    renderMisses(daily);
+}
+function depthShort(d){return {low:"≤20bb",medium:"20–50bb",deep:"50–150bb",ultra:"150bb+"}[d]||d;}
+function scenStr(m){
+  if(m.type==="rfi") return `${m.pos} open · ${depthShort(m.depth)}`;
+  const raiser=m.bucket==="early"?"vs EP open":"vs late open";
+  return `${m.pos} ${raiser} · ${depthShort(m.depth)}`;
+}
+const ACT_LABEL={open:"Open",fold:"Fold","3bet":"3-bet",call:"Call"};
+function fmtDay(k){const [y,m,d]=k.split("-").map(Number);
+  const dt=new Date(y,m-1,d);
+  return dt.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});}
+function renderMisses(daily){
+  const misses=trainerRead("misses",[]);
+  const attemptDays=Object.keys(daily).sort().reverse().slice(0,3);
+  if(!attemptDays.length) return "";
+  const byDay={}; misses.forEach(m=>{(byDay[m.day]=byDay[m.day]||[]).push(m);});
+  let rows="";
+  attemptDays.forEach(day=>{
+    const dm=byDay[day]||[]; const sum=daily[day]||{a:0,c:0};
+    let body;
+    if(!dm.length){
+      body=`<div class="tl-clean">✓ clean — no misses</div>`;
+    } else {
+      const coll={};
+      dm.forEach(m=>{const k=[m.tok,m.type,m.pos,m.bucket,m.depth,m.chose,m.correct].join("|");
+        (coll[k]=coll[k]||{m,n:0}).n++;});
+      body=Object.values(coll).map(({m,n})=>
+        `<div class="tl-miss"><span class="tk">${m.tok}</span>`+
+        `<span class="sc">${scenStr(m)}</span>`+
+        `<span class="ans">you: <span class="x">${ACT_LABEL[m.chose]}</span> · best: <span class="ok">${ACT_LABEL[m.correct]}</span></span>`+
+        (n>1?`<span class="cnt">×${n}</span>`:``)+
+        `</div>`).join("");
+    }
+    rows+=`<div class="tl-day"><div class="dh"><span>${fmtDay(day)}</span>`+
+      `<span class="sm">${sum.a} reps · ${dm.length} missed</span></div>${body}</div>`;
+  });
+  return `<div class="tl-misses"><div class="tl-mtitle">Recent misses — last 3 days you drilled</div>${rows}</div>`;
+}
+
+/* ---------------- effort tracker ---------------- */
+function renderEffort(){
+  const labels=store.get("effortLabels",EFFORT_DEFAULTS.slice());
+  const checks=store.get("effortChecks",{}); // key m_d -> bool
+  const host=document.getElementById("effort");
+  host.querySelectorAll(".row").forEach(n=>n.remove());
+  const foot=host.querySelector(".foot");
+  for(let m=0;m<3;m++){
+    const row=document.createElement("div");row.className="row";
+    const inp=document.createElement("input");inp.className="lbl";inp.value=labels[m]||"";
+    inp.placeholder="Effort metric "+(m+1);
+    inp.addEventListener("input",()=>{labels[m]=inp.value;store.set("effortLabels",labels);});
+    row.appendChild(inp);
+    for(let d=0;d<7;d++){
+      const b=document.createElement("div");b.className="box";const key=m+"_"+d;
+      if(checks[key]){b.classList.add("on");b.textContent="✓";}
+      b.addEventListener("click",()=>{
+        checks[key]=!checks[key];b.classList.toggle("on",checks[key]);
+        b.textContent=checks[key]?"✓":"";store.set("effortChecks",checks);});
+      row.appendChild(b);
+    }
+    host.insertBefore(row,foot);
+  }
+}
+
+/* ---------------- tasks ---------------- */
+function renderTasks(){
+  const state=store.get("taskState",{}); // id -> "done"|"skip"|undefined
+  const host=document.getElementById("tasks");host.innerHTML="";
+  TASKS.forEach(t=>{
+    const cur=state[t.id];
+    const el=document.createElement("div");el.className="task"+(cur==="done"?" done":"");
+    el.innerHTML=
+      '<div class="badge">'+t.day+'</div>'+
+      '<div class="body"><div class="txt">'+t.txt+(t.derived?'<span class="infer">derived</span>':'')+'</div>'+
+      '<div class="link">'+t.link+'</div>'+
+      '<div class="states">'+
+        '<div class="st'+(cur==="done"?" on":"")+'" data-s="done">Done</div>'+
+        '<div class="st'+(cur==="skip"?" on":"")+'" data-s="skip">Skip</div>'+
+      '</div></div>';
+    el.querySelectorAll(".st").forEach(btn=>btn.addEventListener("click",()=>{
+      const s=btn.getAttribute("data-s");state[t.id]=(state[t.id]===s)?undefined:s;
+      store.set("taskState",state);renderTasks();}));
+    host.appendChild(el);
+  });
+}
+
+/* ---------------- lesson feed ---------------- */
+const STATUSES=["studying","applied","mastered"];
+function renderFeed(){
+  const state=store.get("lessonStatus",{}); // day -> status
+  const host=document.getElementById("feed");host.innerHTML="";
+  let logged=0, mastered=0;
+  LESSONS.forEach(L=>{
+    const st=state[L.day]||L.status_default;
+    const isLogged = st==="applied"||st==="mastered";
+    if(isLogged)logged++; if(st==="mastered")mastered++;
+    const el=document.createElement("div");
+    el.className="lesson"+(isLogged?" logged":"")+(st==="mastered"?" mastered":"");
+    el.innerHTML=
+      '<div class="node">'+String(L.day).padStart(2,"0")+'</div>'+
+      '<div class="card">'+
+        '<div class="eyebrow"><span>Day '+L.day+' of 33</span></div>'+
+        '<h3>'+L.title+'</h3>'+
+        '<div class="principle">“'+L.principle+'”</div>'+
+        '<div class="block"><div class="lab">The lesson</div>'+
+          '<div class="lesson-body">'+L.lesson+'</div></div>'+
+        '<div class="delta">'+
+          '<div class="col flagged"><div class="h">✓ You flagged</div>'+L.flagged.map(x=>'<p>'+x+'</p>').join('')+'</div>'+
+          '<div class="col missed"><div class="h">✕ You missed</div>'+L.missed.map(x=>'<p>'+x+'</p>').join('')+'</div>'+
+        '</div>'+
+        '<div class="protake"><div class="h">♠ Pro take</div>'+L.pro.map(x=>'<p>'+x+'</p>').join('')+'</div>'+
+        '<div class="foot-row">'+
+          '<div class="leak">'+L.leak.label+L.leak.pills.map(p=>'<span class="pill '+p.cls+'">'+p.t+'</span>').join('')+'</div>'+
+          '<div class="status-sel" data-day="'+L.day+'">'+
+            STATUSES.map(s=>'<div class="s'+(s===st?" on":"")+'" data-s="'+s+'">'+s+'</div>').join('')+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    el.querySelectorAll(".status-sel .s").forEach(btn=>btn.addEventListener("click",()=>{
+      state[L.day]=btn.getAttribute("data-s");store.set("lessonStatus",state);renderFeed();}));
+    host.appendChild(el);
+  });
+  document.getElementById("progress").innerHTML=
+    '<b>'+logged+'</b> of 33 days logged (applied or mastered) · <b>'+mastered+'</b> mastered'+
+    '<button class="reset" id="resetBtn">Reset all progress</button>';
+  document.getElementById("resetBtn").addEventListener("click",()=>{
+    if(confirm("Clear all saved status, tasks, and effort checks in this browser?")){
+      store.clearAll();renderEffort();renderTasks();renderFeed();}
+  });
+}
+
+/* ---------------- data load ---------------- */
+function loadHands(data){
+  const hands=Array.isArray(data)?data:(data&&data.hands);
+  if(!Array.isArray(hands)||!hands.length){return;}
+  document.getElementById("dataNote").style.display="none";
+  renderComputed(hands);
+}
+(function(){
+  renderEffort();renderTasks();renderFeed();renderTrainerLog();
+  window.addEventListener("storage",e=>{ if(e.key&&e.key.indexOf("pfq_")===0) renderTrainerLog(); });
+  document.addEventListener("visibilitychange",()=>{ if(!document.hidden) renderTrainerLog(); });
+  HUB.load().then(({data,selected})=>{HERO_ID=selected;document.title="Study — "+selected;loadHands(data);})
+    .catch(()=>{/* show manual loader (already visible) */});
+  document.getElementById("fileIn").addEventListener("change",e=>{
+    const f=e.target.files[0];if(!f)return;const r=new FileReader();
+    r.onload=()=>{try{loadHands(JSON.parse(r.result));}catch(err){alert("Couldn't parse that file.");}};
+    r.readAsText(f);});
+})();
+</script>
+</body>
+</html>

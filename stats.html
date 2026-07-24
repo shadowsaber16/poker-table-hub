@@ -1574,8 +1574,8 @@ function drawChart(curve){
   svg.innerHTML=`<polygon points="${X(0)},${zeroY} ${pts} ${X(curve.length-1)},${zeroY}" fill="${col}" opacity="0.10"/>
     <line x1="${pad}" y1="${zeroY}" x2="${W-pad}" y2="${zeroY}" stroke="var(--line)" stroke-dasharray="3 3"/>
     <polyline points="${pts}" fill="none" stroke="${col}" stroke-width="2" stroke-linejoin="round"/>
-    <text x="${pad}" y="14">${(+mx.toFixed(0))} bb</text>
-    <text x="${pad}" y="${H-4}">${(+mn.toFixed(0))} bb</text>
+    <text x="${pad}" y="14">${(+mx.toFixed(0))} cash</text>
+    <text x="${pad}" y="${H-4}">${(+mn.toFixed(0))} cash</text>
     <text x="${W-pad}" y="${H-4}" text-anchor="end">${curve.length} hands</text>`;
 }
 

@@ -316,6 +316,13 @@
   </tr></thead><tbody></tbody></table>
   <div id="coolers"></div>
 
+  <h2 class="section">Scoop vs chop <span class="hint">all-ins with a &gt;70.7% favorite — above that equity you're favored to scoop both runs, so a chop is a miss (and an escape for the underdog)</span></h2>
+  <table id="scoopTable"><thead><tr>
+    <th class="no-sort">Player</th>
+    <th class="no-sort">As leader</th><th class="no-sort">Scooped</th><th class="no-sort">Chopped</th><th class="no-sort">Lost</th><th class="no-sort">Scoop %</th>
+    <th class="no-sort">As underdog</th><th class="no-sort">Escaped (chop)</th><th class="no-sort">Won</th><th class="no-sort">Lost both</th>
+  </tr></thead><tbody></tbody></table>
+
   <h2 class="section">Player identity <span class="hint">how aliases were merged across sessions</span></h2>
   <table id="identityTable"><thead><tr>
     <th class="no-sort">Canonical player</th><th class="no-sort" style="text-align:left">Player ID(s)</th>
@@ -1311,6 +1318,45 @@ function computeLuck(hands){
 function cardSpan(c){const r=c.slice(0,-1)==="T"?"10":c.slice(0,-1);const su=c.slice(-1);
   const red=su==="d"||su==="h";const g={c:"♣",d:"♦",h:"♥",s:"♠"}[su];
   return `<span style="color:${red?'var(--crimson)':'var(--bone)'}">${r}${g}</span>`;}
+function computeScoop(hands){
+  const acc={};
+  const get=(key,name,isHero)=>acc[key]||(acc[key]={key,name,isHero,
+    ldN:0,ldScoop:0,ldChop:0,ldLost:0,udN:0,udChop:0,udWon:0,udLost:0});
+  for(const hand of hands){
+    const ai=hand.allin; if(!ai||!ai.eq_lock||!ai.seats) continue;
+    const seatKey={},seatName={},seatHero={};
+    for(const p of hand.players){const r=resolveIdentity(p.id,p.name);
+      seatKey[p.seat]=r.key;seatName[p.seat]=r.name;seatHero[p.seat]=!!p.is_hero;}
+    const winners=ai.winners||[];
+    const chop=winners.length>=2;
+    for(const s of ai.seats){
+      const eq=ai.eq_lock[String(s)]; if(eq==null||!(s in seatKey)) continue;
+      const won=winners.includes(s);
+      if(eq>70.7){
+        const e=get(seatKey[s],seatName[s],seatHero[s]); e.ldN++;
+        if(chop&&won)e.ldChop++; else if(won)e.ldScoop++; else e.ldLost++;
+      }else if(eq<29.3){
+        const e=get(seatKey[s],seatName[s],seatHero[s]); e.udN++;
+        if(chop&&won)e.udChop++; else if(won)e.udWon++; else e.udLost++;
+      }
+    }
+  }
+  return Object.values(acc).filter(e=>e.ldN+e.udN>0)
+    .sort((a,b)=>(b.ldN+b.udN)-(a.ldN+a.udN));
+}
+function renderScoop(model){
+  const tb=document.querySelector("#scoopTable tbody");
+  if(!tb)return;
+  const rows=computeScoop(activeHands());
+  const d=x=>x||'<span style="color:var(--dim)">0</span>';
+  tb.innerHTML=rows.map(e=>{
+    const sp=e.ldN?Math.round(100*e.ldScoop/e.ldN)+"%":"&mdash;";
+    return `<tr class="${e.isHero?'hero-row':''}">`+
+    `<td>${e.name}${e.isHero?' <span class="pill tag">you</span>':''}</td>`+
+    `<td>${d(e.ldN)}</td><td>${d(e.ldScoop)}</td><td>${d(e.ldChop)}</td><td>${d(e.ldLost)}</td><td>${sp}</td>`+
+    `<td>${d(e.udN)}</td><td>${d(e.udChop)}</td><td>${d(e.udWon)}</td><td>${d(e.udLost)}</td></tr>`;
+  }).join("")||`<tr><td colspan="10" style="color:var(--dim)">No qualifying all-ins in the selected sessions.</td></tr>`;
+}
 function renderLuck(model){
   const L=computeLuck(activeHands());
   const tb=document.querySelector("#luckTable tbody");
@@ -1352,6 +1398,7 @@ function render(model){
   renderIdentity(model);
   renderProfiles(model);
   renderLuck(model);
+  renderScoop(model);
   if(hero){renderNotable(a);renderReads(a);}
 }
 

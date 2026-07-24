@@ -306,16 +306,6 @@
     <th class="no-sort">Style</th>
   </tr></thead><tbody></tbody></table>
 
-  <h2 class="section">Head-to-head <span class="hint">compare two players &amp; how to exploit them</span></h2>
-  <div class="h2h-controls">
-    <select id="cmpA"></select>
-    <span class="vs">vs</span>
-    <select id="cmpB"></select>
-  </div>
-  <div id="compare"></div>
-  <h2 class="section subh">Exploit dossier <span class="hint">directed read from shared hands — <b>Player 1</b> attacking <b>Player 2</b>, with sample sizes</span></h2>
-  <div id="matchupDossier"></div>
-
   <h2 class="section">Player profiles <span class="hint">how to play against each</span></h2>
   <div class="profiles" id="profiles"></div>
 
@@ -1358,7 +1348,7 @@ function render(model){
   drawBankroll(model);
   renderPLO(model);
   renderPlayersTable(model);
-  setupCompare(model);
+  /* head-to-head + exploit dossier removed from public site */
   renderIdentity(model);
   renderProfiles(model);
   renderLuck(model);

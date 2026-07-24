@@ -1,40 +1,40 @@
 {
  "players": {
-  "Falouri": {
+  "Anmol": {
    "streets": {
     "flop": {
-     "value": 5,
-     "semi": 4,
-     "thin": 6,
-     "air": 0
+     "value": 19,
+     "semi": 10,
+     "thin": 18,
+     "air": 1
     },
     "turn": {
-     "value": 5,
-     "semi": 1,
+     "value": 18,
+     "semi": 4,
      "thin": 1,
      "air": 1
     },
     "river": {
-     "value": 6,
+     "value": 20,
      "semi": 0,
-     "thin": 0,
+     "thin": 1,
      "air": 0
     }
    },
    "draw_types": {
-    "FD": 3,
-    "OESD": 1,
-    "GUT": 2
+    "FD": 5,
+    "OESD": 3,
+    "GUT": 7
    },
    "river_air": {
     "busted_fd": 0,
     "busted_sd": 0,
     "other": 0
    },
-   "river_thin": 0,
+   "river_thin": 1,
    "bet_fold": {
-    "n": 3,
-    "f": 2
+    "n": 12,
+    "f": 4
    },
    "examples": []
   },
@@ -286,7 +286,7 @@
     }
    ]
   },
-  "Ronu Nigam": {
+  "Rohan": {
    "streets": {
     "flop": {
      "value": 46,
@@ -605,19 +605,19 @@
   "Pranav": {
    "streets": {
     "flop": {
-     "value": 7,
+     "value": 8,
      "semi": 0,
      "thin": 2,
      "air": 0
     },
     "turn": {
-     "value": 13,
+     "value": 14,
      "semi": 2,
      "thin": 3,
      "air": 0
     },
     "river": {
-     "value": 25,
+     "value": 28,
      "semi": 0,
      "thin": 3,
      "air": 0
@@ -643,21 +643,21 @@
   "Nikhil": {
    "streets": {
     "flop": {
-     "value": 21,
+     "value": 23,
      "semi": 4,
-     "thin": 5,
+     "thin": 6,
      "air": 1
     },
     "turn": {
-     "value": 23,
+     "value": 26,
      "semi": 3,
      "thin": 5,
      "air": 1
     },
     "river": {
-     "value": 17,
+     "value": 18,
      "semi": 0,
-     "thin": 6,
+     "thin": 7,
      "air": 5
     }
    },
@@ -671,9 +671,9 @@
     "busted_sd": 2,
     "other": 3
    },
-   "river_thin": 6,
+   "river_thin": 7,
    "bet_fold": {
-    "n": 22,
+    "n": 26,
     "f": 6
    },
    "examples": [
@@ -764,68 +764,30 @@
     }
    ]
   },
-  "SangetaBijlani": {
-   "streets": {
-    "flop": {
-     "value": 1,
-     "semi": 1,
-     "thin": 1,
-     "air": 0
-    },
-    "turn": {
-     "value": 1,
-     "semi": 0,
-     "thin": 0,
-     "air": 0
-    },
-    "river": {
-     "value": 1,
-     "semi": 0,
-     "thin": 0,
-     "air": 0
-    }
-   },
-   "draw_types": {
-    "FD": 0,
-    "OESD": 0,
-    "GUT": 1
-   },
-   "river_air": {
-    "busted_fd": 0,
-    "busted_sd": 0,
-    "other": 0
-   },
-   "river_thin": 0,
-   "bet_fold": {
-    "n": 0,
-    "f": 0
-   },
-   "examples": []
-  },
   "Arsh": {
    "streets": {
     "flop": {
      "value": 47,
-     "semi": 13,
-     "thin": 18,
+     "semi": 14,
+     "thin": 19,
      "air": 9
     },
     "turn": {
-     "value": 33,
+     "value": 34,
      "semi": 13,
-     "thin": 11,
+     "thin": 12,
      "air": 3
     },
     "river": {
-     "value": 40,
+     "value": 41,
      "semi": 0,
      "thin": 11,
      "air": 15
     }
    },
    "draw_types": {
-    "FD": 9,
-    "OESD": 9,
+    "FD": 10,
+    "OESD": 10,
     "GUT": 10
    },
    "river_air": {
@@ -835,7 +797,7 @@
    },
    "river_thin": 11,
    "bet_fold": {
-    "n": 46,
+    "n": 47,
     "f": 18
    },
    "examples": [
@@ -977,16 +939,16 @@
     }
    ]
   },
-  "Satyam": {
+  "NandanNilekeni": {
    "streets": {
     "flop": {
-     "value": 19,
+     "value": 18,
      "semi": 15,
      "thin": 19,
-     "air": 5
+     "air": 4
     },
     "turn": {
-     "value": 23,
+     "value": 22,
      "semi": 1,
      "thin": 5,
      "air": 0
@@ -1010,8 +972,8 @@
    },
    "river_thin": 0,
    "bet_fold": {
-    "n": 26,
-    "f": 12
+    "n": 23,
+    "f": 11
    },
    "examples": []
   },
@@ -1053,144 +1015,30 @@
    },
    "examples": []
   },
-  "Anmol": {
+  "Satyam": {
    "streets": {
     "flop": {
-     "value": 13,
-     "semi": 5,
-     "thin": 11,
+     "value": 1,
+     "semi": 0,
+     "thin": 0,
      "air": 1
     },
     "turn": {
-     "value": 12,
-     "semi": 3,
-     "thin": 0,
-     "air": 0
-    },
-    "river": {
-     "value": 13,
-     "semi": 0,
-     "thin": 1,
-     "air": 0
-    }
-   },
-   "draw_types": {
-    "FD": 2,
-    "OESD": 2,
-    "GUT": 4
-   },
-   "river_air": {
-    "busted_fd": 0,
-    "busted_sd": 0,
-    "other": 0
-   },
-   "river_thin": 1,
-   "bet_fold": {
-    "n": 9,
-    "f": 2
-   },
-   "examples": []
-  },
-  "GuruG": {
-   "streets": {
-    "flop": {
-     "value": 2,
-     "semi": 0,
-     "thin": 1,
-     "air": 0
-    },
-    "turn": {
-     "value": 3,
-     "semi": 0,
-     "thin": 0,
-     "air": 0
-    },
-    "river": {
-     "value": 1,
-     "semi": 0,
-     "thin": 1,
-     "air": 0
-    }
-   },
-   "draw_types": {
-    "FD": 0,
-    "OESD": 0,
-    "GUT": 0
-   },
-   "river_air": {
-    "busted_fd": 0,
-    "busted_sd": 0,
-    "other": 0
-   },
-   "river_thin": 1,
-   "bet_fold": {
-    "n": 4,
-    "f": 0
-   },
-   "examples": []
-  },
-  "Bal Narendra": {
-   "streets": {
-    "flop": {
-     "value": 1,
-     "semi": 0,
-     "thin": 0,
-     "air": 0
-    },
-    "turn": {
      "value": 1,
      "semi": 0,
      "thin": 0,
      "air": 0
     },
     "river": {
-     "value": 3,
-     "semi": 0,
-     "thin": 0,
-     "air": 0
-    }
-   },
-   "draw_types": {
-    "FD": 0,
-    "OESD": 0,
-    "GUT": 0
-   },
-   "river_air": {
-    "busted_fd": 0,
-    "busted_sd": 0,
-    "other": 0
-   },
-   "river_thin": 0,
-   "bet_fold": {
-    "n": 0,
-    "f": 0
-   },
-   "examples": []
-  },
-  "KanDrool": {
-   "streets": {
-    "flop": {
      "value": 0,
-     "semi": 1,
-     "thin": 1,
-     "air": 0
-    },
-    "turn": {
-     "value": 1,
-     "semi": 0,
-     "thin": 1,
-     "air": 0
-    },
-    "river": {
-     "value": 1,
      "semi": 0,
      "thin": 0,
      "air": 0
     }
    },
    "draw_types": {
-    "FD": 1,
-    "OESD": 1,
+    "FD": 0,
+    "OESD": 0,
     "GUT": 0
    },
    "river_air": {
@@ -1200,8 +1048,8 @@
    },
    "river_thin": 0,
    "bet_fold": {
-    "n": 1,
-    "f": 0
+    "n": 3,
+    "f": 1
    },
    "examples": []
   }

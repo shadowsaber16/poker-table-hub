@@ -7,6 +7,38 @@
  * unchanged for ANY player.
  */
 window.HUB = (function () {
+  const PAGES = [
+    ["stats.html", "Stats"],
+    ["extended-stats.html", "Extended"],
+    ["replayer.html", "Replayer"],
+    ["study.html", "Study"],
+    ["trainer.html", "Trainer"],
+  ];
+
+  function injectNav() {
+    const hdr = document.querySelector("header");
+    if (!hdr || hdr.querySelector(".hub-nav")) return;
+    hdr.querySelectorAll(".nav").forEach(n => n.remove());   // replace old text links
+    const here = (location.pathname.split("/").pop() || "stats.html");
+    const sel = localStorage.getItem("hub_player");
+    const nav = document.createElement("nav");
+    nav.className = "hub-nav";
+    nav.style.cssText = "display:inline-flex;gap:8px;flex-wrap:wrap;margin-left:auto";
+    nav.innerHTML = PAGES.map(([href, label]) => {
+      const on = here === href;
+      const url = sel ? `${href}?p=${encodeURIComponent(sel)}` : href;
+      return `<a href="${url}" style="font-family:var(--ui);font-size:11px;text-decoration:none;` +
+        `padding:5px 12px;border-radius:7px;border:1px solid ${on ? "var(--gold)" : "var(--line)"};` +
+        `color:${on ? "var(--gold)" : "var(--dim)"};background:${on ? "rgba(217,164,65,.12)" : "#0e271f"}">` +
+        `${label}</a>`;
+    }).join("");
+    const spacer = hdr.querySelector(".spacer");
+    if (spacer) spacer.after(nav); else hdr.appendChild(nav);
+  }
+  if (document.readyState === "loading")
+    document.addEventListener("DOMContentLoaded", injectNav);
+  else injectNav();
+
   function canonWith(map) {
     return (id, name) => map[id] || map[name] || name;
   }

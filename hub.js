@@ -10,9 +10,6 @@ window.HUB = (function () {
   const PAGES = [
     ["stats.html", "Stats"],
     ["extended-stats.html", "Extended"],
-    ["replayer.html", "Replayer"],
-    ["study.html", "Study"],
-    ["trainer.html", "Trainer"],
   ];
 
   function injectNav() {
